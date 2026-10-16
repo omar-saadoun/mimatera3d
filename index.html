@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>MiMatera3D</title>
+<meta name="description" content="MiMatera3D: armá tu matera para el auto, impresa en 3D a pedido en Uruguay. mimatera3d.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Montserrat:wght@700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: configurador en dos columnas; a la izquierda la "cama de impresión" con la vista previa y el ticket, a la derecha las opciones. En celular se apila y aparece una barra fija con el total. */
+:root{
+  --bg:#ECEFE8; --surface:#F8F9F5; --stage:#E1E6DC; --grid:#CFD6C9;
+  --ink:#19201A; --muted:#5A645B; --line:#CBD2C6;
+  --accent:#2E6A38; --accent-ink:#FFFFFF; --accent-soft:#DCE8D8;
+  --warm:#B9561F; --chip:#F3E3D3;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111512; --surface:#191E1A; --stage:#1C221D; --grid:#29312A;
+  --ink:#E5EAE2; --muted:#9BA69C; --line:#2E372F;
+  --accent:#86BB76; --accent-ink:#0E140F; --accent-soft:#223423;
+  --warm:#E58D58; --chip:#3A2A1E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111512; --surface:#191E1A; --stage:#1C221D; --grid:#29312A;
+  --ink:#E5EAE2; --muted:#9BA69C; --line:#2E372F;
+  --accent:#86BB76; --accent-ink:#0E140F; --accent-soft:#223423;
+  --warm:#E58D58; --chip:#3A2A1E; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--body);
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.proto{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;font:500 12px/1.4 var(--mono);color:var(--warm);
+  background:var(--chip);margin:0 calc(-1 * max(16px, env(safe-area-inset-left,0px)));padding:7px 16px;text-align:center}
+
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:18px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font:800 19px/1 var(--display)}
+.brand svg{width:28px;height:28px}
+.top nav{display:flex;gap:18px;font-size:14px}
+.top nav a{color:var(--muted);text-decoration:none}
+.top nav a:hover{color:var(--ink)}
+
+.intro{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;align-items:end;padding-block:36px 24px}
+.intro h1{font-size:clamp(34px,5.4vw,62px);line-height:.98;font-weight:800}
+.intro h1 em{font-style:normal;color:var(--accent)}
+.intro p{margin:0;color:var(--muted);max-width:52ch}
+.specs{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font:400 12px/1.5 var(--mono);color:var(--muted);letter-spacing:.02em}
+.specs b{color:var(--ink);font-weight:600}
+
+/* ---------- configurador ---------- */
+.config{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:28px;align-items:start;padding-bottom:56px}
+.left{display:flex;flex-direction:column;gap:16px}
+@media (min-width:901px){
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px)}
+  .stage.is3d{aspect-ratio:auto;height:min(56vh,560px);flex:none}
+  .left .ticket{display:flex;flex-direction:column;min-height:0}
+  .left .lines{overflow:auto;min-height:0;flex:1 1 auto}
+}
+.stage{position:relative;border-radius:14px;overflow:hidden;background-color:var(--stage);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;background-position:-1px -1px}
+.stage svg{display:block;width:100%;height:auto;max-height:52vh}
+.stage .cap{position:absolute;left:12px;bottom:10px;font:400 11px/1.3 var(--mono);color:var(--muted);letter-spacing:.03em}
+.stage .code{position:absolute;right:12px;top:10px;font:600 11px/1.3 var(--mono);color:var(--muted);background:var(--surface);padding:4px 8px;border-radius:6px}
+#view{display:none}
+.stage.is3d{aspect-ratio:1/.9}
+.stage.is3d #preview{display:none}
+.stage.is3d #view{display:block;position:absolute;inset:0;cursor:grab}
+.stage.is3d #view:active{cursor:grabbing}
+.stage.is3d #view canvas{display:block;width:100%;height:100%;touch-action:none}
+.stage.is3d .code{top:auto;bottom:10px}
+.viewctl{position:absolute;left:12px;top:12px;right:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;pointer-events:none}
+.viewctl > *{pointer-events:auto}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:600 12.5px/1 var(--body);padding:7px 11px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chk{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 11px;font:600 12.5px/1 var(--body);color:var(--muted);cursor:pointer}
+.chk input{accent-color:var(--accent);margin:0}
+.seg button:focus-visible,.chk:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:440px){.stage.is3d .cap{display:none}}
+
+.ticket{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px}
+.ticket h2{font-size:18px;margin-bottom:10px}
+.lines{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.lines li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.lines li span:first-child{min-width:0}
+.lines li small{display:block;color:var(--muted);font-size:12.5px}
+.lines .amt{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding-top:12px}
+.total span:first-child{font-weight:600}
+.total .amt{font:800 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btn{appearance:none;border:1px solid var(--line);background:transparent;color:var(--ink);font:600 14px/1 var(--body);
+  padding:12px 16px;border-radius:999px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:hover{filter:brightness(1.06)}
+.btn:focus-visible,.opt input:focus-visible + span,.sw input:focus-visible + span,input[type=text]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fine{margin:12px 0 0;font-size:12.5px;color:var(--muted)}
+details.msg{margin-top:10px}
+details.msg summary{cursor:pointer;font-size:13px;color:var(--muted)}
+details.msg pre{white-space:pre-wrap;font:400 12.5px/1.5 var(--mono);background:var(--bg);padding:10px 12px;border-radius:8px;margin:8px 0 0;user-select:all}
+
+.opts{display:flex;flex-direction:column;gap:12px;min-width:0}
+fieldset{border:0;margin:0;padding:18px;background:var(--surface);border-radius:14px;border:1px solid var(--line);min-width:0}
+legend{float:left;width:100%;padding:0;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+legend h3{font-size:17px;font-weight:600}
+legend .step{font:400 11px/1 var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px}
+legend .delta{font:600 13px/1 var(--mono);color:var(--warm);white-space:nowrap}
+.tag{font:600 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;background:var(--chip);color:var(--warm);padding:4px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
+.hint{clear:both;margin:0 0 12px;font-size:13px;color:var(--muted)}
+
+.swatches{clear:both;display:flex;flex-wrap:wrap;gap:10px}
+.sw{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;width:68px;cursor:pointer;text-align:center}
+.sw input,.opt input{position:absolute;opacity:0;pointer-events:none}
+.sw span.dot{width:44px;height:44px;border-radius:50%;border:1px solid rgba(0,0,0,.18);box-shadow:inset 0 -6px 10px rgba(0,0,0,.18), inset 0 4px 6px rgba(255,255,255,.25);transition:transform .15s}
+.sw input:checked + span.dot{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink), inset 0 -6px 10px rgba(0,0,0,.18)}
+.sw small{font-size:12px;line-height:1.2;color:var(--muted)}
+.sw input:checked ~ small{color:var(--ink);font-weight:600}
+.sw .esp{font:600 10px/1 var(--mono);color:var(--warm)}
+
+.cards{clear:both;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cards.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:520px){.cards.three{grid-template-columns:1fr}}
+.opt{position:relative;cursor:pointer;display:block}
+.opt > span{display:flex;flex-direction:column;gap:3px;height:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);transition:border-color .15s}
+.opt:hover > span{border-color:var(--muted)}
+.opt input:checked + span{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.opt b{font-weight:600;font-size:14.5px}
+.opt small{color:var(--muted);font-size:12.5px;line-height:1.35}
+.opt .p{font:600 12px/1 var(--mono);color:var(--warm);margin-top:auto;padding-top:6px}
+.opt .p.inc{color:var(--muted);font-weight:400}
+.opt svg.mini{width:100%;height:46px;margin-bottom:4px}
+.extras .opt > span{flex-direction:row;align-items:flex-start;gap:12px}
+.extras .box{flex:none;width:20px;height:20px;border-radius:5px;border:1.5px solid var(--muted);margin-top:2px;display:grid;place-items:center}
+.extras .opt input:checked + span .box{background:var(--accent);border-color:var(--accent)}
+.extras .box svg{width:13px;height:13px;opacity:0}
+.extras .opt input:checked + span .box svg{opacity:1}
+.extras .txt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.extras .p{margin-top:0;padding-top:2px;align-self:flex-start}
+.cards.extras{grid-template-columns:1fr}
+
+.sub{clear:both;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:12px}
+.sub label.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.note{margin:0;font-size:13px;line-height:1.45;color:var(--muted);max-width:56ch}
+.xsub{display:flex;flex-direction:column;gap:6px;margin:-2px 0 4px 44px;font-size:13px;color:var(--muted)}
+.xsub label{display:flex;flex-direction:column;gap:6px}
+.xsub input,.xsub select{font:600 15px/1.2 var(--mono);padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:auto;max-width:100%}
+.howto{color:var(--accent);font-weight:600;font-size:13px;align-self:flex-start}
+.measure{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:start}
+[hidden]{display:none!important}
+.msteps{margin:0;padding-left:30px;display:flex;flex-direction:column;gap:10px;max-width:60ch}
+.msteps li::marker{font-family:var(--mono);color:var(--accent);font-weight:600}
+.mtext p{margin:14px 0 0;color:var(--muted);max-width:62ch}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.calc h3{font-size:17px;font-weight:600}
+.calc label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.calc input{font:600 18px/1.2 var(--mono);padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);max-width:180px}
+.calc input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.calcout{margin:0;font-size:15px;min-height:3em}
+.calcout b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+#medir{scroll-margin-top:16px}
+.xsub input:focus-visible,.xsub select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=text]{font:600 16px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;max-width:280px}
+
+/* ---------- secciones ---------- */
+section.band{padding-block:48px;border-top:1px solid var(--line)}
+section.band h2{font-size:clamp(24px,3vw,34px);font-weight:800;margin-bottom:22px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;counter-reset:s;list-style:none;margin:0;padding:0}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);font:800 44px/1 var(--display);color:var(--accent)}
+.steps b{font-size:16px}
+.steps p{margin:0;color:var(--muted);max-width:40ch}
+.faq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 28px}
+.faq details{border-bottom:1px solid var(--line);padding:12px 0}
+.faq summary{cursor:pointer;font-weight:600}
+.faq p{margin:8px 0 0;color:var(--muted)}
+footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;border-top:1px solid var(--line)}
+
+/* barra fija en celular */
+.bar{display:none}
+@media (max-width:900px){
+  .measure{grid-template-columns:1fr}
+  #medir{scroll-margin-top:calc(min(44vh,92vw) + 16px)}
+  .intro{grid-template-columns:1fr;padding-block:24px 16px}
+  .config{grid-template-columns:1fr}
+  .left{display:contents}
+  .stage{order:1}.opts{order:2}.ticket{order:3}
+  .stage svg{max-height:none}
+  .stage{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 10px 24px -14px rgba(0,0,0,.45)}
+  .stage.is3d{aspect-ratio:auto;height:min(44vh,92vw)}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+  .top nav{display:none}
+  .steps,.faq{grid-template-columns:1fr}
+  .bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--surface);border-top:1px solid var(--line);
+    padding:10px max(16px, env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px))}
+  .bar .amt{font:800 22px/1 var(--display);font-variant-numeric:tabular-nums}
+  .bar small{display:block;font-size:11.5px;color:var(--muted)}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="13" width="24" height="13" rx="3" fill="var(--accent)"/><path d="M9 13V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v7h-3V7h-4v6z" fill="var(--ink)"/></svg>
+    MiMatera3D
+  </div>
+  <nav><a href="#armar">Armá la tuya</a><a href="#como">Cómo funciona</a><a href="#preguntas">Preguntas</a></nav>
+</header>
+
+<div class="intro" id="armar">
+  <h1>Armá tu matera, <em>pieza por pieza</em>.</h1>
+  <div>
+    <p>Para el termo Stanley 1,2 L y tu mate. La imprimimos a pedido en PETG, que aguanta el sol dentro del auto. Elegí color, manija y placa: el precio se actualiza mientras armás.</p>
+    <div class="specs"><span><b>217 × 165 × 120</b> mm</span><span>termo <b>Ø 102</b> mm</span><span>mate hasta <b>Ø 86</b> mm</span><span>manija <b>desmontable</b></span></div>
+  </div>
+</div>
+
+<div class="config">
+  <div class="left">
+    <div class="stage" aria-label="Vista previa de la matera">
+      <svg id="preview" viewBox="0 0 440 400" role="img" aria-labelledby="pvTitle">
+        <title id="pvTitle">Vista previa de la matera configurada</title>
+        <defs>
+          <pattern id="pat-estrias" width="6" height="6" patternUnits="userSpaceOnUse"><path class="ps" d="M3 0V6" stroke-width="1.6"/></pattern>
+          <pattern id="pat-rombos" width="9" height="9" patternUnits="userSpaceOnUse"><path class="ps" d="M0 0L9 9M9 0L0 9" stroke-width="1.1"/></pattern>
+          <pattern id="pat-hex" width="12" height="20.8" patternUnits="userSpaceOnUse"><path class="ps" d="M0 3.5L6 0L12 3.5V10.4L6 13.9L0 10.4ZM6 13.9V20.8" stroke-width="1" fill="none"/></pattern>
+          <pattern id="pat-layers" width="6" height="3" patternUnits="userSpaceOnUse"><path id="layerLine" d="M0 2.5H6" stroke-width=".7"/></pattern>
+        </defs>
+        <ellipse cx="225" cy="372" rx="170" ry="10" fill="#000" opacity=".12"/>
+        <g id="g-base">
+          <polygon id="b-side" points="352,232 382,208 382,342 352,366"/>
+          <polygon id="b-top" points="78,232 352,232 382,208 108,208"/>
+          <ellipse id="hole-t" cx="162" cy="220" rx="62" ry="8.5"/>
+          <ellipse id="hole-m" cx="310" cy="220" rx="49" ry="7.5"/>
+          <rect id="b-front" x="78" y="232" width="274" height="134" rx="5"/>
+          <rect x="78" y="232" width="274" height="134" rx="5" fill="url(#pat-layers)"/>
+          <g id="stripes"></g>
+          <g id="plate">
+            <rect id="plate-rec" x="155" y="272" width="120" height="46" rx="7"/>
+            <rect id="plate-face" x="158" y="275" width="114" height="40" rx="5"/>
+            <text id="plate-txt" x="215" y="301.5" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-weight="700" font-size="17" letter-spacing="1.5"></text>
+          </g>
+        </g>
+        <g id="g-handle">
+          <path id="h-shape" fill-rule="evenodd"/>
+          <path id="h-pat" fill-rule="evenodd"/>
+          <path id="h-hl" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2"/>
+        </g>
+      </svg>
+      <div id="view" aria-hidden="true"></div>
+      <div class="viewctl" id="viewctl" hidden>
+        <div class="seg" role="group" aria-label="Posición de la manija">
+          <button type="button" id="mode-mano" aria-pressed="true">En la mano</button>
+          <button type="button" id="mode-auto" aria-pressed="false">En el auto</button>
+        </div>
+        <label class="chk"><input type="checkbox" id="props"> Con termo y mate</label>
+      </div>
+      <span class="code mono" id="code">MT-…</span>
+      <span class="cap" id="cap">Esquema frontal · no a escala</span>
+    </div>
+
+    <aside class="ticket" id="pedido">
+      <h2>Tu pedido</h2>
+      <ul class="lines" id="lines"></ul>
+      <div class="total"><span>Total</span><span class="amt" id="total">$ 0</span></div>
+      <div class="actions">
+        <a class="btn primary" id="wa" href="#" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+        <button class="btn" id="copy" type="button">Copiar pedido</button>
+      </div>
+      <p class="fine">Se imprime a pedido: 5 a 7 días hábiles. Retiro sin costo o envío a todo el país. Pagás con Mercado Pago o transferencia.</p>
+      <details class="msg"><summary>Ver el mensaje que se envía</summary><pre id="msg"></pre></details>
+    </aside>
+  </div>
+
+  <form class="opts" id="opts" onsubmit="return false">
+    <fieldset>
+      <legend><span><span class="step">Base</span><h3>Color de la matera</h3></span><span class="delta">incluido</span></legend>
+      <div class="swatches" id="g-baseColor"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span><span class="step">Manija · forma</span><h3>Tipo de manija</h3></span><span class="delta" id="d-handleType"></span></legend>
+      <p class="hint">Todas encastran a presión en el tabique central y se sacan apretando los botones.</p>
+      <div class="cards" id="g-handleType"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span><span class="step">Manija · textura</span><h3>Patrón en el agarre</h3></span><span class="delta" id="d-pattern"></span></legend>
+      <p class="hint">El relieve va solo en el agarre, que es donde apoya la mano.</p>
+      <div class="cards" id="g-pattern"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span><span class="step">Manija · color</span><h3>Color de la manija</h3></span><span class="delta" id="d-handleColor"></span></legend>
+      <p class="hint">Igual que la base: incluido. Otro color: +$80. Acabado seda: +$180.</p>
+      <div class="swatches" id="g-handleColor"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span><span class="step">Frente</span><h3>Placa del frente</h3></span><span class="delta" id="d-plate"></span></legend>
+      <p class="hint">Placa de 69 × 21 mm que se imprime aparte, con el relieve en otro color, y va pegada en el rebaje del frente. Sin cargo lleva nuestra marca.</p>
+      <div class="cards" id="g-plate"></div>
+      <div class="sub" id="plateSub" hidden>
+        <label class="field" id="plateTextWrap">Texto de la placa (hasta 10 caracteres, en mayúsculas y en relieve)
+          <input type="text" id="plateText" maxlength="10" value="OMAR" autocomplete="off">
+        </label>
+        <div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Color de la placa</div>
+          <div class="swatches" id="g-plateColor"></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span><span class="step">Base · detalle</span><h3>Franjas de color <span class="tag">Fase 2</span></h3></span><span class="delta" id="d-stripes"></span></legend>
+      <p class="hint">Tres franjas de color alrededor de la base, a 4 mm del piso. Se hacen cambiando el filamento mientras se imprime.</p>
+      <div class="cards" id="g-stripes"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span><span class="step">Extras</span><h3>Agregados</h3></span><span class="delta" id="d-extras"></span></legend>
+      <div class="cards extras" id="g-extras"></div>
+    </fieldset>
+  </form>
+</div>
+
+<section class="band" id="como">
+  <h2>Cómo funciona</h2>
+  <ol class="steps">
+    <li><b>Armás tu matera</b><p>Elegís cada pieza acá y nos mandás el pedido por WhatsApp con su código.</p></li>
+    <li><b>Confirmás y pagás</b><p>Te respondemos con el link de Mercado Pago o los datos para transferir. Ahí entra a la cola de impresión.</p></li>
+    <li><b>La imprimimos y te llega</b><p>En 5 a 7 días hábiles la retirás o te la mandamos por agencia a todo el país.</p></li>
+  </ol>
+</section>
+
+<section class="band" id="medir">
+  <h2>Cómo medir tu termo o tu mate</h2>
+  <div class="measure">
+    <div class="mtext">
+      <ol class="msteps">
+        <li>Cortá una tira de papel de 1 cm de ancho y unos 40 cm de largo.</li>
+        <li>Rodeá el termo con la tira, bien ajustada y derecha, en la parte que entra en la matera: los primeros 12 cm desde abajo.</li>
+        <li>Marcá con lápiz dónde se cruza la tira, estirala y medí con una regla desde la punta hasta la marca. Ese es el perímetro.</li>
+        <li>Dividí el perímetro por 3,14 y vas a tener el diámetro. Por ejemplo, 295 mm ÷ 3,14 = 94 mm, que es el talle B.</li>
+      </ol>
+      <p>Si tenés calibre, medí el diámetro directo en esa misma zona. El Stanley 1,2 L (Ø 102 mm) entra sin adaptador.</p>
+      <p>Para el mate se mide igual, en la parte más ancha que entra en el vaso. Si mide más de 75 mm, no necesitás aro. Si es más chico, elegí el aro de hueco inmediatamente mayor: un mate de 68 mm va con el aro de 70 mm.</p>
+    </div>
+    <div class="calc">
+      <h3>Calculá tu talle</h3>
+      <label for="perim">Perímetro de tu termo, en mm<input type="number" id="perim" inputmode="decimal" min="200" max="400" placeholder="295"></label>
+      <p class="calcout" id="calcOut">Escribí el perímetro que mediste y te decimos qué talle de adaptador va.</p>
+      <button type="button" class="btn primary" id="useT" hidden>Agregar adaptador</button>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="preguntas">
+  <h2>Preguntas</h2>
+  <div class="faq">
+    <details><summary>¿Qué termo entra?</summary><p>Está hecha para el Stanley 1,2 L (Ø 102 mm), con ranura para el asa. Para termos de 90 a 97 mm de diámetro sumá el adaptador: nos decís la medida y lo hacemos a medida.</p></details>
+    <details><summary>¿Y si mi mate es más grande?</summary><p>El hueco es de 86 mm. Si tu mate es más ancho, avisanos en el pedido y te imprimimos la base con la medida justa.</p></details>
+    <details><summary>¿Aguanta el sol del auto?</summary><p>Sí. Usamos PETG, que no se deforma con el calor de un auto al sol como el PLA.</p></details>
+    <details><summary>¿Cómo se usa en el auto?</summary><p>Sacás la manija de arriba y la encastrás atrás, a ras del piso. Queda horizontal y se mete entre el respaldo y el asiento del acompañante.</p></details>
+    <details><summary>¿Puedo cambiar la manija después?</summary><p>Sí. La manija encastra a presión, así que podés comprar otra forma o color y cambiarla en segundos.</p></details>
+  </div>
+</section>
+
+<footer><span>MiMatera3D · Montevideo, Uruguay</span><span class="mono">mimatera3d.com</span><span>Impreso a pedido en PETG</span></footer>
+</div>
+
+<div class="bar" aria-hidden="false">
+  <div><small>Total</small><span class="amt" id="barTotal">$ 0</span></div>
+  <a class="btn primary" href="#pedido">Ver pedido</a>
+</div>
+
+<script>
+/* ======= Catálogo: editá precios y opciones acá ======= */
+const WHATSAPP = "59899892175";
+const CAT = {
+  base: 1490,
+  colors: {
+    grafito:{n:"Grafito",hex:"#2C2F2D",tier:"std",c:"GR"},
+    hormigon:{n:"Hormigón",hex:"#8D918A",tier:"std",c:"HO"},
+    yerba:{n:"Yerba",hex:"#57713F",tier:"std",c:"YE"},
+    arena:{n:"Arena",hex:"#D5C6A2",tier:"std",c:"AR"},
+    hueso:{n:"Blanco hueso",hex:"#EEEAE0",tier:"std",c:"BH"},
+    rojo:{n:"Rojo",hex:"#B03A2F",tier:"std",c:"RO"},
+    azul:{n:"Azul",hex:"#25508E",tier:"std",c:"AZ"},
+    cobre:{n:"Cobre seda",hex:"#B8734A",tier:"esp",c:"CO"},
+    oro:{n:"Oro seda",hex:"#C9A444",tier:"esp",c:"OR"}
+  },
+  baseColors:["grafito","hormigon","yerba","arena"],
+  handleColors:["grafito","hormigon","yerba","arena","hueso","rojo","azul","cobre","oro"],
+  handleColorPrice:{same:0,std:80,esp:180},
+  handleType:[
+    {id:"clasica",n:"Clásica",d:"La actual, con agarre recto",p:0,c:"CL"},
+    {id:"larga",n:"Mango largo",d:"Patas 4 cm más largas: el agarre queda más alto",p:190,c:"LA"},
+    {id:"arco",n:"Arco",d:"Curva continua, más liviana",p:240,c:"AC"},
+    {id:"ergo",n:"Ergonómica",d:"Agarre más grueso con huecos para 4 dedos",p:290,c:"ER"}
+  ],
+  pattern:[
+    {id:"lisa",n:"Lisa",p:0,c:"L"},
+    {id:"estrias",n:"Estrías",d:"Líneas cada 4 mm",p:90,c:"E"},
+    {id:"rombos",n:"Rombos",d:"Malla cruzada de 6 mm",p:120,c:"R"},
+    {id:"hex",n:"Panal",d:"Celdas de 5 mm",p:150,c:"H"}
+  ],
+  plate:[
+    {id:"marca",n:"Placa MiMatera3D",d:"Nuestra marca en relieve",p:0,c:"M"},
+    {id:"texto",n:"Nombre o iniciales",d:"Hasta 10 caracteres en relieve",p:290,c:"T"}
+  ],
+  plateColors:["hueso","grafito","cobre","oro"],
+  plateEspPrice:100,
+  termoSizes:[{id:"A",min:90,max:92},{id:"B",min:93,max:95},{id:"C",min:96,max:97}],
+  stripes:[
+    {id:"none",n:"Sin franjas",p:0,c:"0",cols:[]},
+    {id:"tricolor",n:"Tricolor",d:"Rojo, blanco y azul",p:350,c:"TR",cols:["#B4262E","#F2F2EE","#1D3F8B"]},
+    {id:"aurinegra",n:"Aurinegra",d:"Amarillo y negro",p:350,c:"AN",cols:["#F2C230","#151515","#F2C230"]},
+    {id:"celeste",n:"Celeste",d:"Celeste y blanco",p:350,c:"CE",cols:["#6CACE4","#F2F2EE","#6CACE4"]}
+  ],
+  extras:[
+    {id:"patitas",n:"Patitas antideslizantes",d:"4 patitas de goma para que no se mueva en el piso del auto",p:120,c:"PA"},
+    {id:"adaptador",n:"Adaptador de termo",d:"Funda en 3 talles para termos de 90 a 97 mm de diámetro",p:190,c:"AT"},
+    {id:"aro",n:"Aro para mate chico",d:"Achica el hueco del mate de 86 mm a 65, 70 o 75 mm",p:120,c:"AM"},
+    {id:"regalo",n:"Caja de regalo",d:"Con tarjeta escrita a mano",p:200,c:"CR"}
+  ]
+};
+
+/* ======= Estado (ejemplo inicial) ======= */
+const S = {baseColor:"grafito",handleType:"larga",pattern:"estrias",handleColor:"cobre",
+  plate:"texto",plateText:"OMAR",plateColor:"hueso",stripes:"none",extras:new Set(),termoT:"B",aroD:70};
+
+const $ = id => document.getElementById(id);
+const fmt = n => "$ " + n.toLocaleString("es-UY");
+const plus = n => n ? "+" + fmt(n) : "incluido";
+const byId = (arr,id) => arr.find(o=>o.id===id);
+
+/* ======= Color helpers ======= */
+function hexToRgb(h){h=h.replace("#","");return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16));}
+function mix(h,t,a){const c=hexToRgb(h),d=t==="w"?[255,255,255]:[0,0,0];return "rgb("+c.map((v,i)=>Math.round(v+(d[i]-v)*a)).join(",")+")";}
+function lum(h){const [r,g,b]=hexToRgb(h).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b;}
+const isLight = h => lum(h) > .35;
+
+/* ======= Geometría de la manija ======= */
+function rr(x,y,w,h,r){return `M${x+r} ${y}H${x+w-r}A${r} ${r} 0 0 1 ${x+w} ${y+r}V${y+h-r}A${r} ${r} 0 0 1 ${x+w-r} ${y+h}H${x+r}A${r} ${r} 0 0 1 ${x} ${y+h-r}V${y+r}A${r} ${r} 0 0 1 ${x+r} ${y}Z`;}
+function handlePath(t,cx,fy){
+  if(t==="clasica") return rr(cx-50,fy-100,100,100,8)+rr(cx-36,fy-70,72,58,5);
+  if(t==="larga")   return rr(cx-50,fy-148,100,148,8)+rr(cx-36,fy-118,72,106,5);
+  if(t==="arco")    return `M${cx-50} ${fy}V${fy-58}A50 50 0 0 1 ${cx+50} ${fy-58}V${fy}Z`+`M${cx-36} ${fy-12}V${fy-58}A36 36 0 0 1 ${cx+36} ${fy-58}V${fy-12}Z`;
+  // ergonómica: agarre más grueso con 4 huecos para los dedos
+  let inner=`M${cx-36} ${fy-12}V${fy-62}`;
+  for(let i=0;i<4;i++) inner+=`a9 8 0 0 1 18 0`;
+  inner+=`V${fy-12}Z`;
+  return rr(cx-50,fy-104,100,104,16)+inner;
+}
+function topEdge(t,cx,fy){
+  if(t==="arco") return `M${cx-46} ${fy-58}A46 46 0 0 1 ${cx+46} ${fy-58}`;
+  const top={clasica:fy-100,larga:fy-148,ergo:fy-104}[t], w=40;
+  return `M${cx-w} ${top+2.5}H${cx+w}`;
+}
+
+/* ======= Render de controles ======= */
+function swatchGroup(el,name,ids,priceFn){
+  el.innerHTML="";
+  ids.forEach(id=>{
+    const c=CAT.colors[id];
+    const l=document.createElement("label");l.className="sw";
+    l.innerHTML=`<input type="radio" name="${name}" id="${name}-${id}" value="${id}"><span class="dot" style="background:${c.hex}"></span><small>${c.n}</small>${c.tier==="esp"?'<span class="esp">seda</span>':""}`;
+    el.appendChild(l);
+  });
+}
+function cardGroup(el,name,items,mini){
+  el.innerHTML="";
+  items.forEach(o=>{
+    const l=document.createElement("label");l.className="opt";
+    l.innerHTML=`<input type="radio" name="${name}" id="${name}-${o.id}" value="${o.id}"><span>${mini?mini(o):""}<b>${o.n}</b>${o.d?`<small>${o.d}</small>`:""}<span class="p ${o.p?"":"inc"}">${plus(o.p)}</span></span>`;
+    el.appendChild(l);
+  });
+}
+const ink = "var(--ink)";
+function miniHandle(o){return `<svg class="mini" viewBox="150 20 140 156" aria-hidden="true"><path d="${handlePath(o.id,220,172)}" fill-rule="evenodd" fill="${ink}" opacity=".85"/></svg>`;}
+function miniPattern(o){
+  if(o.id==="lisa") return `<svg class="mini" viewBox="0 0 100 40" aria-hidden="true"><rect x="0" y="4" width="100" height="32" rx="6" fill="${ink}" opacity=".85"/></svg>`;
+  const d={estrias:"M3 0V6",rombos:"M0 0L9 9M9 0L0 9",hex:"M0 3.5L6 0L12 3.5V10.4L6 13.9L0 10.4ZM6 13.9V20.8"}[o.id];
+  const wh={estrias:[6,6],rombos:[9,9],hex:[12,20.8]}[o.id];
+  return `<svg class="mini" viewBox="0 0 100 40" aria-hidden="true"><defs><pattern id="m-${o.id}" width="${wh[0]}" height="${wh[1]}" patternUnits="userSpaceOnUse"><path d="${d}" stroke="var(--surface)" stroke-width="1.4" fill="none"/></pattern></defs><rect x="0" y="4" width="100" height="32" rx="6" fill="${ink}" opacity=".85"/><rect x="0" y="4" width="100" height="32" rx="6" fill="url(#m-${o.id})"/></svg>`;
+}
+function miniStripes(o){
+  if(!o.cols.length) return `<svg class="mini" viewBox="0 0 100 40" aria-hidden="true"><rect x="0" y="4" width="100" height="32" rx="6" fill="${ink}" opacity=".18"/></svg>`;
+  return `<svg class="mini" viewBox="0 0 100 40" aria-hidden="true"><rect x="0" y="4" width="100" height="32" rx="6" fill="${ink}" opacity=".18"/>${o.cols.map((c,i)=>`<rect x="0" y="${12+i*6}" width="100" height="6" fill="${c}"/>`).join("")}</svg>`;
+}
+function extrasGroup(el){
+  el.innerHTML="";
+  CAT.extras.forEach(o=>{
+    const l=document.createElement("label");l.className="opt";
+    l.innerHTML=`<input type="checkbox" name="extras" id="extra-${o.id}" value="${o.id}"><span><span class="box"><svg viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-7" stroke="var(--accent-ink)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="txt"><b>${o.n}</b><small>${o.d}</small></span><span class="p">+${fmt(o.p)}</span></span>`;
+    el.appendChild(l);
+    if(o.id==="adaptador") el.insertAdjacentHTML("beforeend",`<div class="xsub" id="xsub-adaptador" hidden><label for="termoT">Talle según el diámetro de tu termo<select id="termoT">${CAT.termoSizes.map(t=>`<option value="${t.id}">Talle ${t.id} · termos de ${t.min} a ${t.max} mm</option>`).join("")}</select></label><a class="howto" href="#medir">¿Cómo mido mi termo?</a></div>`);
+    if(o.id==="aro") el.insertAdjacentHTML("beforeend",`<div class="xsub" id="xsub-aro" hidden><label for="aroD">Hueco para tu mate<select id="aroD"><option value="65">Ø 65 mm</option><option value="70">Ø 70 mm</option><option value="75">Ø 75 mm</option></select></label><a class="howto" href="#medir">¿Cómo mido mi mate?</a></div>`);
+  });
+}
+
+swatchGroup($("g-baseColor"),"baseColor",CAT.baseColors);
+swatchGroup($("g-handleColor"),"handleColor",CAT.handleColors);
+swatchGroup($("g-plateColor"),"plateColor",CAT.plateColors);
+cardGroup($("g-handleType"),"handleType",CAT.handleType,miniHandle);
+cardGroup($("g-pattern"),"pattern",CAT.pattern,miniPattern);
+cardGroup($("g-plate"),"plate",CAT.plate);
+cardGroup($("g-stripes"),"stripes",CAT.stripes,miniStripes);
+extrasGroup($("g-extras"));
+
+function syncInputs(){
+  ["baseColor","handleColor","plateColor","handleType","pattern","plate","stripes"].forEach(k=>{const i=$(k+"-"+S[k]); if(i) i.checked=true;});
+  CAT.extras.forEach(o=>$("extra-"+o.id).checked=S.extras.has(o.id));
+  $("plateText").value=S.plateText;
+  $("termoT").value=S.termoT; $("aroD").value=S.aroD;
+}
+syncInputs();
+
+/* ======= Precio ======= */
+function handleColorCost(){
+  if(S.handleColor===S.baseColor) return 0;
+  return CAT.handleColorPrice[CAT.colors[S.handleColor].tier];
+}
+function plateColorCost(){return S.plate!=="marca" && CAT.colors[S.plateColor].tier==="esp" ? CAT.plateEspPrice : 0;}
+function compute(){
+  const L=[]; const ht=byId(CAT.handleType,S.handleType), pt=byId(CAT.pattern,S.pattern), pl=byId(CAT.plate,S.plate), st=byId(CAT.stripes,S.stripes);
+  L.push({n:"Matera base",s:"Color "+CAT.colors[S.baseColor].n,p:CAT.base});
+  L.push({n:"Manija "+ht.n,s:"Textura "+pt.n.toLowerCase(),p:ht.p+pt.p});
+  const hc=handleColorCost();
+  L.push({n:"Color de manija",s:CAT.colors[S.handleColor].n+(S.handleColor===S.baseColor?" (igual a la base)":""),p:hc});
+  {
+    const txt=S.plate==="texto"?`“${(S.plateText||"").trim()||"—"}”`:"MiMatera3D";
+    L.push({n:S.plate==="texto"?"Placa: "+pl.n:pl.n,s:txt+" en "+CAT.colors[S.plateColor].n.toLowerCase(),p:pl.p+plateColorCost()});
+  }
+  if(S.stripes!=="none") L.push({n:"Franjas "+st.n,s:st.d,p:st.p});
+  const tz=CAT.termoSizes.find(t=>t.id===S.termoT)||CAT.termoSizes[1];
+  const exSub={adaptador:"Talle "+tz.id+", para termos de "+tz.min+" a "+tz.max+" mm",aro:"Hueco de Ø "+S.aroD+" mm"};
+  CAT.extras.forEach(o=>{if(S.extras.has(o.id)) L.push({n:o.n,s:exSub[o.id]||"",p:o.p});});
+  const total=L.reduce((a,b)=>a+b.p,0);
+  const code="MT-"+[CAT.colors[S.baseColor].c, ht.c+pt.c, CAT.colors[S.handleColor].c, pl.c+CAT.colors[S.plateColor].c, st.c].join("·")
+    +(S.extras.size?"+"+CAT.extras.filter(o=>S.extras.has(o.id)).map(o=>o.c+(o.id==="adaptador"?S.termoT:o.id==="aro"?S.aroD:"")).join(""):"");
+  return {L,total,code,ht,pt,pl,st};
+}
+
+/* ======= Vista previa ======= */
+function drawPreview(r){
+  const base=CAT.colors[S.baseColor].hex, hcol=CAT.colors[S.handleColor].hex;
+  $("b-front").setAttribute("fill",base);
+  $("b-top").setAttribute("fill",mix(base,"w",.16));
+  $("b-side").setAttribute("fill",mix(base,"k",.22));
+  $("hole-t").setAttribute("fill",mix(base,"k",.55));
+  $("hole-m").setAttribute("fill",mix(base,"k",.55));
+  $("layerLine").setAttribute("stroke",isLight(base)?"rgba(0,0,0,.07)":"rgba(255,255,255,.06)");
+
+  // franjas
+  const g=$("stripes"); g.innerHTML="";
+  r.st.cols.forEach((c,i)=>{
+    const y=338+i*6;
+    g.insertAdjacentHTML("beforeend",`<rect x="78" y="${y}" width="274" height="6" fill="${c}"/><polygon points="352,${y} 382,${y-24} 382,${y-18} 352,${y+6}" fill="${c}" opacity=".78"/>`);
+  });
+
+  // placa
+  const plate=$("plate");
+  $("plate-rec").setAttribute("fill",mix(base,"k",.35));
+  const pc=CAT.colors[S.plateColor].hex;
+  $("plate-face").setAttribute("fill",pc);
+  const t=$("plate-txt");
+  t.setAttribute("fill",isLight(pc)?"#1E1E1C":"#F2F0EA");
+  if(S.plate==="texto"){t.textContent=(S.plateText||"").trim().toUpperCase()||"TU NOMBRE";t.setAttribute("font-size",t.textContent.length>7?"14":"17");}
+  else{t.textContent="MiMatera3D";t.setAttribute("font-size","14");}
+
+  // manija
+  const d=handlePath(S.handleType,236,220);
+  $("h-shape").setAttribute("d",d);
+  $("h-shape").setAttribute("fill",hcol);
+  $("h-shape").setAttribute("stroke",mix(hcol,"k",.35));
+  $("h-shape").setAttribute("stroke-width","1");
+  const hp=$("h-pat");
+  if(S.pattern==="lisa"){hp.setAttribute("d","");}
+  else{
+    hp.setAttribute("d",d);
+    hp.setAttribute("fill",`url(#pat-${S.pattern})`);
+    document.querySelectorAll(`#pat-${S.pattern} .ps`).forEach(p=>{p.setAttribute("stroke",isLight(hcol)?"rgba(0,0,0,.28)":"rgba(255,255,255,.28)");p.setAttribute("fill","none");});
+  }
+  $("h-hl").setAttribute("d",topEdge(S.handleType,236,220));
+}
+
+/* ======= Ticket y mensaje ======= */
+function render(){
+  const r=compute();
+  $("lines").innerHTML=r.L.map(l=>`<li><span>${l.n}${l.s?`<small>${esc(l.s)}</small>`:""}</span><span class="amt">${l===r.L[0]?fmt(l.p):plus(l.p)}</span></li>`).join("");
+  $("total").textContent=fmt(r.total); $("barTotal").textContent=fmt(r.total);
+  $("code").textContent=r.code;
+  $("d-handleType").textContent=plus(r.ht.p);
+  $("d-pattern").textContent=plus(r.pt.p);
+  $("d-handleColor").textContent=plus(handleColorCost());
+  $("d-plate").textContent=plus(r.pl.p+plateColorCost());
+  $("d-stripes").textContent=plus(r.st.p);
+  const ex=CAT.extras.filter(o=>S.extras.has(o.id)).reduce((a,o)=>a+o.p,0);
+  $("d-extras").textContent=plus(ex);
+  $("plateTextWrap").hidden=S.plate!=="texto";
+  $("xsub-adaptador").hidden=!S.extras.has("adaptador");
+  $("xsub-aro").hidden=!S.extras.has("aro");
+
+  const msg=["¡Hola MiMatera3D! Quiero esta matera:",
+    ...r.L.map(l=>"• "+l.n+(l.s?" — "+l.s:"")+" ("+(l===r.L[0]?fmt(l.p):plus(l.p))+")"),
+    "Código: "+r.code,
+    "Total: "+fmt(r.total)].join("\n");
+  $("msg").textContent=msg;
+  $("wa").href="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(msg);
+  drawPreview(r);
+  if(window.mat3d) window.mat3d.update(r);
+  try{localStorage.setItem("matera-config",JSON.stringify({...S,extras:[...S.extras]}));}catch(e){}
+}
+function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+$("opts").addEventListener("change",e=>{
+  const el=e.target;
+  if(el.name==="extras"){el.checked?S.extras.add(el.value):S.extras.delete(el.value);}
+  else if(el.type==="radio"){S[el.name]=el.value;}
+  else if(el.id==="termoT"){S.termoT=el.value;}
+  else if(el.id==="aroD"){S.aroD=+el.value;}
+  render();
+});
+$("plateText").addEventListener("input",e=>{S.plateText=e.target.value;render();});
+$("copy").addEventListener("click",()=>{
+  const txt=$("msg").textContent, b=$("copy");
+  const done=()=>{b.textContent="Copiado";setTimeout(()=>b.textContent="Copiar pedido",1600);};
+  const fallback=()=>{const d=b.closest(".ticket").querySelector("details.msg");d.open=true;const r=document.createRange();r.selectNodeContents($("msg"));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Seleccionado: copialo";};
+  try{navigator.clipboard.writeText(txt).then(done,fallback);}catch(e){fallback();}
+});
+
+// calculadora de talle del adaptador
+function termoFit(d){
+  if(d>=99.5&&d<=103) return {ok:false,msg:"Es la medida del Stanley 1,2 L: <b>no necesitás adaptador</b>."};
+  const t=CAT.termoSizes.find(t=>d>=t.min-0.5&&d<=t.max+0.5);
+  if(t) return {ok:true,t,msg:`Tu termo mide <b>Ø ${String(d).replace(".",",")} mm</b>: va el <b>talle ${t.id}</b> (termos de ${t.min} a ${t.max} mm).`};
+  return {ok:false,msg:`Tu termo mide <b>Ø ${String(d).replace(".",",")} mm</b>. No tenemos adaptador para esa medida: escribinos por WhatsApp y lo vemos.`};
+}
+$("perim").addEventListener("input",e=>{
+  const v=parseFloat(String(e.target.value).replace(",","."));
+  const out=$("calcOut"), b=$("useT");
+  if(!isFinite(v)||v<200||v>400){out.textContent="Escribí el perímetro que mediste y te decimos qué talle de adaptador va.";b.hidden=true;return;}
+  const d=Math.round(v/Math.PI*2)/2, f=termoFit(d);
+  out.innerHTML=f.msg; b.hidden=!f.ok;
+  if(f.ok){b.dataset.t=f.t.id; b.textContent="Agregar adaptador talle "+f.t.id;}
+});
+$("useT").addEventListener("click",e=>{
+  S.termoT=e.currentTarget.dataset.t; S.extras.add("adaptador"); syncInputs(); render();
+  e.currentTarget.textContent="Agregado: talle "+S.termoT;
+  $("xsub-adaptador").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});
+});
+
+// recuperar la última configuración de este navegador
+try{const saved=JSON.parse(localStorage.getItem("matera-config")||"null");
+  if(saved){Object.assign(S,saved,{extras:new Set((saved.extras||[]).filter(id=>CAT.extras.some(o=>o.id===id))),termoT:CAT.termoSizes.some(t=>t.id===saved.termoT)?saved.termoT:"B",aroD:saved.aroD||70}); if(!CAT.plate.some(o=>o.id===S.plate)) S.plate=S.plate==="none"?"marca":"texto";syncInputs();}}catch(e){}
+render();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-28.24],[89.81,-27.9],[91.47,-27.47],[93.18,-26.87],[94.76,-26.2],[96.37,-25.35],[97.83,-24.46],[99.3,-23.38],[100.62,-22.28],[101.91,-21.01],[103.05,-19.73],[104.15,-18.27],[105.09,-16.84],[105.95,-15.24],[106.67,-13.68],[107.3,-11.98],[107.78,-10.33],[108.15,-8.55],[108.38,-6.85],[108.49,-5.04],[108.5,29.7],[108.5,44.1],[108.5,58.5],[108.42,60.32],[108.24,62.02],[107.9,63.81],[107.47,65.47],[106.87,67.18],[106.2,68.76],[105.35,70.37],[104.46,71.83],[103.38,73.3],[102.28,74.62],[101.01,75.91],[99.73,77.05],[98.27,78.15],[96.84,79.09],[95.24,79.95],[93.68,80.67],[91.98,81.3],[90.33,81.78],[88.55,82.15],[86.85,82.38],[85.04,82.49],[46.7,82.5],[34.98,82.5],[-7.1,81.3],[-34.98,81.3],[-52.67,82.5],[-70.1,82.5],[-84.5,82.5],[-86.32,82.42],[-88.02,82.24],[-89.81,81.9],[-91.47,81.47],[-93.18,80.87],[-94.76,80.2],[-96.37,79.35],[-97.83,78.46],[-99.3,77.38],[-100.62,76.28],[-101.91,75.01],[-103.05,73.73],[-104.15,72.27],[-105.09,70.84],[-105.95,69.24],[-106.67,67.68],[-107.3,65.98],[-107.78,64.33],[-108.15,62.55],[-108.38,60.85],[-108.49,59.04],[-108.5,24.3],[-108.5,9.9],[-108.5,-4.5],[-108.42,-6.32],[-108.24,-8.02],[-107.9,-9.81],[-107.47,-11.47],[-106.87,-13.18],[-106.2,-14.76],[-105.35,-16.37],[-104.46,-17.83],[-103.38,-19.3],[-102.28,-20.62],[-101.01,-21.91],[-99.73,-23.05],[-98.27,-24.15],[-96.84,-25.09],[-95.24,-25.95],[-93.68,-26.67],[-91.98,-27.3],[-90.33,-27.78],[-88.55,-28.15],[-86.85,-28.38],[-85.04,-28.49],[-22.05,-28.5],[-16.2,-28.5],[-16.2,-30.38],[-16.2,-50.48],[-16.2,-63.3],[-16.19,-68.01],[-16.19,-77.91],[-16.19,-79.79],[-15.61,-81.29],[-14.07,-82.37],[-12.31,-82.5],[21.63,-82.5],[31.31,-82.5],[32.89,-82.42],[34.4,-81.54],[35.18,-79.83],[35.19,-68.01],[35.2,-63.3],[35.2,-43.2],[35.2,-30.38]];
+/* ======= Visor 3D: modelo de vidriera de la matera (mm) ======= */
+(function(){
+  const stage=document.querySelector(".stage"), host=document.getElementById("view");
+  if(!window.THREE || !THREE.OrbitControls || !window.fetch) return;   // sin 3D queda el esquema
+  let renderer;
+  try{ renderer=new THREE.WebGLRenderer({antialias:true,alpha:true}); }catch(e){ return; }
+  if(!renderer.getContext()) return;
+  const cap=document.getElementById("cap"), capText="Arrastrá para girar · medidas reales";
+  stage.classList.add("is3d");
+  document.getElementById("viewctl").hidden=false;
+  cap.textContent="Cargando el modelo…";
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.08;
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.localClippingEnabled=true;
+  host.appendChild(renderer.domElement);
+
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(30,1,5,6000);
+  cam.position.set(-420,330,560);
+  const ctl=new THREE.OrbitControls(cam,renderer.domElement);
+  ctl.target.set(0,85,0); ctl.enableDamping=true; ctl.dampingFactor=.08; ctl.enablePan=false;
+  ctl.minDistance=280; ctl.maxDistance=1400; ctl.maxPolarAngle=Math.PI*.53;
+  const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  ctl.autoRotate=!reduce; ctl.autoRotateSpeed=.7;
+  ctl.addEventListener("start",()=>{ctl.autoRotate=false;});
+
+  scene.add(new THREE.HemisphereLight(0xffffff,0x7d8577,.8));
+  const key=new THREE.DirectionalLight(0xffffff,1.15); key.position.set(-260,520,360); key.castShadow=true;
+  key.shadow.mapSize.set(2048,2048); Object.assign(key.shadow.camera,{left:-340,right:340,top:340,bottom:-340,near:50,far:1700});
+  key.shadow.bias=-.0006; scene.add(key);
+  const rim=new THREE.DirectionalLight(0xffffff,.4); rim.position.set(320,220,-360); scene.add(rim);
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.ShadowMaterial({opacity:.16}));
+  ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+
+  /* El modelo usa z hacia arriba y el frente en +y; esta matriz lo pasa al visor (Y arriba). */
+  const root=new THREE.Group(); root.matrixAutoUpdate=false;
+  root.matrix.set(-1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,1); root.updateMatrixWorld(true); scene.add(root);
+
+  /* Medidas del modelo */
+  const XS=9.5;                         // centro del tabique y del encastre trasero
+  const TERMO=[-53,27], MATE=[62.5,27]; // centros de los vasos
+  const FRONT_Y=82.5, RECESS_Z=17.5;    // rebaje de la placa: 70 x 22 mm, centrado a 17,5 mm de altura
+  const SHOULDER=-26.5;                 // en la manija: donde termina el macho y arranca el marco
+
+  const lin=hex=>new THREE.Color(hex).convertSRGBToLinear();
+  const baseMat=new THREE.MeshStandardMaterial({roughness:.58,metalness:0});
+  const handleMat=new THREE.MeshStandardMaterial({roughness:.5,metalness:0});
+  const plateSide=new THREE.MeshStandardMaterial({roughness:.5});
+  const plateFront=new THREE.MeshStandardMaterial({roughness:.5});
+  function finish(mat,colorId){const seda=CAT.colors[colorId].tier==="esp"; mat.metalness=seda?.45:0; mat.roughness=seda?.32:.58;}
+  const add=(g,mesh)=>{mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);return mesh;};
+
+  // modelo de vidriera (sin el mecanismo de encastre), posiciones a 0,1 mm
+  const VK="MiMatera3D-vidriera";
+  function fromBin(txt){
+    const s=atob(txt.trim()), u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i)^VK.charCodeAt(i%VK.length);
+    const N=new DataView(u.buffer).getUint32(0,true);
+    const p=new Int16Array(u.buffer.slice(4,4+N*6)), q=new Int8Array(u.buffer.slice(4+N*6,4+N*9));
+    const pos=new Float32Array(N*3), nor=new Float32Array(N*3);
+    for(let i=0;i<N*3;i++){pos[i]=p[i]/10; nor[i]=q[i]/127;}
+    const g=new THREE.BufferGeometry();
+    g.setAttribute("position",new THREE.BufferAttribute(pos,3)); g.setAttribute("normal",new THREE.BufferAttribute(nor,3));
+    return g;
+  }
+  // UV por proyección según la cara (mm), para que la textura del agarre tenga escala real
+  function planarUV(g){
+    const p=g.attributes.position.array, n=p.length/3, uv=new Float32Array(n*2);
+    const A=new THREE.Vector3(),B=new THREE.Vector3(),C=new THREE.Vector3(),N=new THREE.Vector3();
+    for(let i=0;i<n;i+=3){
+      A.fromArray(p,i*3); B.fromArray(p,i*3+3); C.fromArray(p,i*3+6);
+      N.subVectors(C,B).cross(B.clone().sub(A)); const ax=Math.abs(N.x),ay=Math.abs(N.y),az=Math.abs(N.z);
+      for(let k=0;k<3;k++){const x=p[(i+k)*3],y=p[(i+k)*3+1],z=p[(i+k)*3+2];
+        let u,v; if(az>=ax&&az>=ay){u=x;v=y;} else if(ay>=ax){u=x;v=z;} else {u=y;v=z;}
+        uv[(i+k)*2]=u; uv[(i+k)*2+1]=v;}
+    }
+    g.setAttribute("uv",new THREE.BufferAttribute(uv,2)); return g;
+  }
+  function rrShape(xa,xb,ya,yb,r){
+    const s=new THREE.Shape();
+    s.moveTo(xa+r,ya); s.lineTo(xb-r,ya); s.absarc(xb-r,ya+r,r,-Math.PI/2,0,false);
+    s.lineTo(xb,yb-r); s.absarc(xb-r,yb-r,r,0,Math.PI/2,false);
+    s.lineTo(xa+r,yb); s.absarc(xa+r,yb-r,r,Math.PI/2,Math.PI,false);
+    s.lineTo(xa,ya+r); s.absarc(xa+r,ya+r,r,Math.PI,Math.PI*1.5,false);
+    return s;
+  }
+  function offsetPoly(pts,d){   // corre el contorno d mm hacia afuera (d<0: hacia adentro)
+    let a=0; for(let i=0;i<pts.length;i++){const p=pts[i],q=pts[(i+1)%pts.length]; a+=p[0]*q[1]-q[0]*p[1];}
+    const s=a>0?1:-1, out=[];
+    for(let i=0;i<pts.length;i++){
+      const p0=pts[(i-1+pts.length)%pts.length],p=pts[i],p1=pts[(i+1)%pts.length];
+      const n0=[ (p[1]-p0[1]), -(p[0]-p0[0]) ], n1=[ (p1[1]-p[1]), -(p1[0]-p[0]) ];
+      const l0=Math.hypot(...n0)||1,l1=Math.hypot(...n1)||1;
+      let nx=n0[0]/l0+n1[0]/l1, ny=n0[1]/l0+n1[1]/l1; const l=Math.hypot(nx,ny)||1; nx/=l; ny/=l;
+      out.push(new THREE.Vector2(p[0]+s*nx*d,p[1]+s*ny*d));
+    }
+    return out;
+  }
+
+  /* --- Placa del frente (en coordenadas del visor) --- */
+  const plateCanvas=document.createElement("canvas"); plateCanvas.width=700; plateCanvas.height=220;
+  const plateTex=new THREE.CanvasTexture(plateCanvas); plateTex.encoding=THREE.sRGBEncoding; plateTex.anisotropy=4;
+  plateFront.map=plateTex;
+  const plate=add(scene,new THREE.Mesh(new THREE.BoxGeometry(69.4,21.4,1.8),[plateSide,plateSide,plateSide,plateSide,plateFront,plateSide]));
+  plate.position.set(0,RECESS_Z,FRONT_Y-1.2+.9);
+  function paintPlate(){
+    const ctx=plateCanvas.getContext("2d"), hex=CAT.colors[S.plateColor].hex;
+    ctx.fillStyle=hex; ctx.fillRect(0,0,700,220);
+    const txt=S.plate==="texto"?((S.plateText||"").trim().toUpperCase()||"TU NOMBRE"):"MiMatera3D";
+    ctx.fillStyle=isLight(hex)?"#1E1E1C":"#F2F0EA";
+    const PX=700/69.4, MAXW=62*PX, CAPH=.7;
+    let size=Math.round(11*PX/CAPH); const minSize=Math.round(7*PX/CAPH);
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    const setF=()=>ctx.font=`700 ${size}px Montserrat, Arial, sans-serif`;
+    setF(); while(ctx.measureText(txt).width>MAXW&&size>minSize){size-=3; setF();}
+    const w=ctx.measureText(txt).width;
+    ctx.save(); ctx.translate(350,114); ctx.scale(Math.min(1,MAXW/w),1);
+    ctx.shadowColor="rgba(0,0,0,.35)"; ctx.shadowOffsetY=5; ctx.shadowBlur=5;
+    ctx.fillText(txt,0,0); ctx.restore();
+    plateTex.needsUpdate=true;
+    plateSide.color.copy(lin(hex)); plateFront.color.set(0xffffff);
+    finish(plateFront,S.plateColor); finish(plateSide,S.plateColor);
+  }
+
+  /* --- Franjas: anillos de 2,6 mm a partir de 4 mm, siguiendo el contorno real de la base --- */
+  const stripes=new THREE.Group(); root.add(stripes);
+  const stripeMats=[0,1,2].map(i=>{
+    const m=new THREE.MeshStandardMaterial({roughness:.55});
+    const sh=new THREE.Shape(offsetPoly(OUTLINE,.45)); sh.holes.push(new THREE.Path(offsetPoly(OUTLINE,-.8)));
+    const g=new THREE.ExtrudeGeometry(sh,{depth:2.6,bevelEnabled:false}); g.translate(0,0,4+i*2.6);
+    const mesh=new THREE.Mesh(g,m); mesh.receiveShadow=true; stripes.add(mesh); return m;});
+
+  /* --- Manijas: la clásica viene del modelo; las demás usan el mismo pie con otro marco --- */
+  const handleG=new THREE.Group(); root.add(handleG);
+  let realHandle=null, plug=null, handleMesh=null, gripMesh=null, curType=null;
+  function frameShape(t){   // marco en mm, con el pie desde y=0 (el macho queda abajo)
+    let s,h;
+    if(t==="arco"){
+      s=new THREE.Shape(); s.moveTo(-50,0); s.lineTo(50,0); s.lineTo(50,44); s.absarc(0,44,50,0,Math.PI,false); s.lineTo(-50,0);
+      h=new THREE.Path(); h.moveTo(-37,14); h.lineTo(37,14); h.lineTo(37,44); h.absarc(0,44,37,0,Math.PI,false); h.lineTo(-37,14);
+    }else if(t==="ergo"){
+      s=rrShape(-50,50,0,90,14);
+      h=new THREE.Path(); h.moveTo(-39,14); h.lineTo(39,14); h.lineTo(39,62);
+      const sr=(9.75*9.75+36)/12, sc=68-sr, sa=Math.atan2(62-sc,9.75);
+      [29.25,9.75,-9.75,-29.25].forEach(c=>h.absarc(c,sc,sr,sa,Math.PI-sa,false)); h.lineTo(-39,14);
+    }else{ // mango largo: patas 40 mm más largas que la clásica
+      s=rrShape(-50,50,0,123,6);
+      const hp=rrShape(-39,39,14,99,4); h=new THREE.Path(hp.getPoints(12));
+    }
+    s.holes.push(h); return s;
+  }
+  const GRIP_Y={clasica:32,larga:72,ergo:35,arco:43.5};   // la textura va arriba de esta altura (agarre)
+  const gripMat=new THREE.MeshStandardMaterial({roughness:.5,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-4});
+  const clipLocal=[new THREE.Plane(new THREE.Vector3(0,1,0),-32),new THREE.Plane(new THREE.Vector3(0,0,1),-.5)]; // y la cara de la cama (z=0) queda lisa
+  const clipWorld=clipLocal.map(p=>p.clone()); gripMat.clippingPlanes=clipWorld;
+  function buildHandle(t){
+    [handleMesh,gripMesh].forEach(m=>{if(m) handleG.remove(m);});
+    if(plug) handleG.remove(plug);
+    let g;
+    if(t==="clasica"){ g=realHandle; }
+    else{
+      const b=1.6; g=new THREE.ExtrudeGeometry(frameShape(t),{depth:20-2*b,bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelOffset:-b,bevelSegments:3,curveSegments:40});
+      g.translate(0,SHOULDER,b); planarUV(g);
+      handleG.add(plug);
+    }
+    handleMesh=add(handleG,new THREE.Mesh(g,handleMat));
+    gripMesh=new THREE.Mesh(g,gripMat); gripMesh.receiveShadow=true; handleG.add(gripMesh);
+    clipLocal[0].constant=-GRIP_Y[t]; curType=t;
+  }
+  function syncClip(){handleG.updateMatrixWorld(); clipLocal.forEach((p,i)=>clipWorld[i].copy(p).applyMatrix4(handleG.matrixWorld));}
+  const pc=document.createElement("canvas"); pc.width=pc.height=256; const pctx=pc.getContext("2d");
+  const bc=document.createElement("canvas"); bc.width=bc.height=256; const bctx=bc.getContext("2d");
+  const pTex=new THREE.CanvasTexture(pc), bTex=new THREE.CanvasTexture(bc);
+  pTex.encoding=THREE.sRGBEncoding; [pTex,bTex].forEach(t=>{t.wrapS=t.wrapT=THREE.RepeatWrapping;});
+  function drawPattern(ctx,bg,ink,pat){
+    ctx.fillStyle=bg; ctx.fillRect(0,0,256,256); ctx.strokeStyle=ink; ctx.lineCap="square";
+    if(pat==="estrias"){ctx.lineWidth=32; for(let x=32;x<256;x+=64){ctx.beginPath();ctx.moveTo(x,-4);ctx.lineTo(x,260);ctx.stroke();}}
+    if(pat==="rombos"){ctx.lineWidth=13; for(let k=-256;k<=512;k+=64){ctx.beginPath();ctx.moveTo(k,0);ctx.lineTo(k+256,256);ctx.moveTo(k,256);ctx.lineTo(k+256,0);ctx.stroke();}}
+    if(pat==="hex"){ctx.save(); ctx.scale(256/192,256/110.85); ctx.lineWidth=22;
+      [[0,0],[192,0],[0,110.85],[192,110.85],[96,55.42],[96,-55.42],[96,166.27]].forEach(([cx,cy])=>{
+        ctx.beginPath(); for(let i=0;i<=6;i++){const a=i*Math.PI/3; const px=cx+64*Math.cos(a), py=cy+64*Math.sin(a); i?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.stroke();});
+      ctx.restore();}
+  }
+  let curPat=null, curHC=null;
+  function paintHandle(pat,colorId){
+    const hex=CAT.colors[colorId].hex;
+    drawPattern(pctx,hex,isLight(hex)?"rgba(0,0,0,.32)":"rgba(255,255,255,.30)",pat);
+    drawPattern(bctx,"#808080","#ffffff",pat);
+    const rep=pat==="hex"?[1/8.66,1/5]:pat==="rombos"?[1/24,1/24]:[1/16,1/16];
+    pTex.repeat.set(rep[0],rep[1]); bTex.repeat.copy(pTex.repeat); pTex.needsUpdate=bTex.needsUpdate=true;
+    handleMat.color.copy(lin(hex)); handleMat.needsUpdate=true;
+    gripMat.map=pTex; gripMat.bumpMap=bTex; gripMat.bumpScale=3; gripMat.color.set(0xffffff); gripMat.needsUpdate=true;
+    if(gripMesh) gripMesh.visible=pat!=="lisa";
+    finish(handleMat,colorId); finish(gripMat,colorId); curPat=pat; curHC=colorId;
+  }
+
+  /* --- Posiciones de la manija ---
+     auto: en el encastre trasero, a ras del piso, con la manija horizontal hacia atrás
+     mano: en el cartucho atornillado arriba del tabique, con la manija vertical */
+  const pose=(cx,cy,cz,p)=>({p:new THREE.Vector3(...p),q:new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...cx),new THREE.Vector3(...cy),new THREE.Vector3(...cz)))});
+  const poses={
+    auto:pose([-1,0,0],[0,-1,0],[0,0,1],[XS,-82.5+SHOULDER,2.7]),
+    mano:pose([0,1,0],[0,0,1],[1,0,0],[5,27,132-SHOULDER])
+  };
+  handleG.position.copy(poses.mano.p); handleG.quaternion.copy(poses.mano.q);
+  let mode="mano", anim=null, camAnim=null, handlePose="mano";
+  const views={mano:{p:new THREE.Vector3(-420,330,560),t:new THREE.Vector3(0,85,0)},auto:{p:new THREE.Vector3(480,270,-560),t:new THREE.Vector3(0,40,-50)},props:{p:new THREE.Vector3(-580,500,780),t:new THREE.Vector3(0,150,0)}};
+  function camTo(v){ctl.autoRotate=false; if(reduce){cam.position.copy(v.p);ctl.target.copy(v.t);return;} camAnim={t0:performance.now(),p0:cam.position.clone(),t0v:ctl.target.clone(),v};}
+  function placeHandle(){
+    const want=mode==="auto"?"auto":"mano";
+    if(want===handlePose) return; handlePose=want;
+    const from={p:handleG.position.clone(),q:handleG.quaternion.clone()}, to=poses[want];
+    if(reduce){handleG.position.copy(to.p);handleG.quaternion.copy(to.q);return;}
+    anim={t0:performance.now(),from,to};
+  }
+  function setMode(m){
+    if(m===mode) return; mode=m;
+    document.getElementById("mode-mano").setAttribute("aria-pressed",m==="mano");
+    document.getElementById("mode-auto").setAttribute("aria-pressed",m==="auto");
+    placeHandle(); camTo(m==="auto"?views.auto:(props.visible?views.props:views.mano));
+  }
+  document.getElementById("mode-mano").addEventListener("click",()=>setMode("mano"));
+  document.getElementById("mode-auto").addEventListener("click",()=>setMode("auto"));
+
+  /* --- Termo Stanley 1,2 L y mate de referencia (torno con eje Y, girado a z arriba) --- */
+  const props=new THREE.Group(); props.visible=false; props.rotation.x=Math.PI/2; root.add(props);
+  {
+    const steel=new THREE.MeshStandardMaterial({color:lin("#4E5A55"),metalness:.55,roughness:.38});
+    const tp=[[0,3],[49,3],[51,7],[51,252],[48,265],[39,282],[37,292],[40,296],[40,330],[0,330]].map(q=>new THREE.Vector2(q[0],q[1]));
+    const termo=add(props,new THREE.Mesh(new THREE.LatheGeometry(tp,72),steel)); termo.position.set(TERMO[0],0,-TERMO[1]);
+    const asaX=TERMO[0]-52.5-20;
+    const bar=add(props,new THREE.Mesh(new THREE.BoxGeometry(11,140,22),steel)); bar.position.set(asaX-6,63+70,-TERMO[1]);
+    [70,198].forEach(y=>{const a=add(props,new THREE.Mesh(new THREE.BoxGeometry(26,12,22),steel)); a.position.set(asaX+6,y,-TERMO[1]);});
+    const gourd=new THREE.MeshStandardMaterial({color:lin("#7A5534"),roughness:.7});
+    const mp=[[0,3],[18,4],[31,12],[39,28],[41,45],[38,62],[32,76],[29,84],[30,88],[27,90],[26,86]].map(q=>new THREE.Vector2(q[0],q[1]));
+    const mate=add(props,new THREE.Mesh(new THREE.LatheGeometry(mp,64),gourd)); mate.position.set(MATE[0],0,-MATE[1]);
+    const yerba=new THREE.Mesh(new THREE.CircleGeometry(26.5,40),new THREE.MeshStandardMaterial({color:lin("#6E8240"),roughness:.95}));
+    yerba.rotation.x=-Math.PI/2; yerba.position.set(MATE[0],86,-MATE[1]); props.add(yerba);
+    const bomb=add(props,new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,170,16),new THREE.MeshStandardMaterial({color:lin("#C9CCCF"),metalness:.9,roughness:.25})));
+    bomb.position.set(MATE[0]-14,135,-MATE[1]-6); bomb.rotation.z=.22;
+  }
+  document.getElementById("props").addEventListener("change",e=>{props.visible=e.target.checked; camTo(props.visible?views.props:(mode==="auto"?views.auto:views.mano));});
+
+  /* --- Actualizar desde el configurador --- */
+  let ready=false;
+  function update(r){
+    if(!ready) return;
+    baseMat.color.copy(lin(CAT.colors[S.baseColor].hex)); finish(baseMat,S.baseColor);
+    if(curType!==S.handleType) buildHandle(S.handleType);
+    if(curPat!==S.pattern||curHC!==S.handleColor) paintHandle(S.pattern,S.handleColor);
+    gripMesh.visible=S.pattern!=="lisa";
+    paintPlate();
+    const cols=(r||compute()).st.cols;
+    stripes.visible=cols.length>0;
+    cols.forEach((c,i)=>stripeMats[i].color.copy(lin(c)));
+  }
+  window.mat3d={update};
+
+  /* --- Carga de las piezas --- */
+  const get=u=>fetch(u).then(r=>{if(!r.ok) throw new Error(u); return r.text();});
+  Promise.all(["piezas/base.txt","piezas/cartucho.txt","piezas/manija.txt","piezas/macho.txt"].map(get)).then(([b,c,h,m])=>{
+    add(root,new THREE.Mesh(fromBin(b),baseMat));
+    add(root,new THREE.Mesh(fromBin(c),baseMat));
+    realHandle=planarUV(fromBin(h));
+    plug=new THREE.Mesh(planarUV(fromBin(m)),handleMat); plug.castShadow=plug.receiveShadow=true;
+    ready=true; cap.textContent=capText; update();
+    if(document.fonts&&document.fonts.load) document.fonts.load('700 60px Montserrat').then(()=>paintPlate()).catch(()=>{});
+  }).catch(()=>{
+    stage.classList.remove("is3d"); document.getElementById("viewctl").hidden=true; cap.textContent="Esquema frontal · no a escala";
+    renderer.setAnimationLoop(null); stopped=true;
+  });
+
+  /* --- Render --- */
+  let stopped=false;
+  function resize(){const w=host.clientWidth,h=host.clientHeight; if(!w||!h) return;
+    renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(host); resize();
+  const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+  (function loop(now){
+    if(stopped) return;
+    requestAnimationFrame(loop);
+    if(anim){const t=Math.min(1,(now-anim.t0)/650), e=ease(t);
+      handleG.position.lerpVectors(anim.from.p,anim.to.p,e);
+      handleG.quaternion.copy(anim.from.q).slerp(anim.to.q,e);
+      if(t>=1) anim=null;}
+    if(camAnim){const t=Math.min(1,(now-camAnim.t0)/900), e=ease(t);
+      cam.position.lerpVectors(camAnim.p0,camAnim.v.p,e); ctl.target.lerpVectors(camAnim.t0v,camAnim.v.t,e);
+      if(t>=1) camAnim=null;}
+    ctl.update(); if(ready) syncClip(); renderer.render(scene,cam);
+  })(performance.now());
+})();
+</script>
+
+</body>
+</html>
