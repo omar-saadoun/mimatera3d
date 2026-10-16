@@ -823,7 +823,10 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
       s=rrShape(-50,50,0,123,6);
       const hp=rrShape(-39,39,14,99,4); h=new THREE.Path(hp.getPoints(12));
     }
-    s.holes.push(h); return s;
+    // contornos sin puntos repetidos: los segmentos de largo cero rompen el redondeo de bordes
+    const clean=pts=>{const o=[];for(const q of pts){if(!o.length||o[o.length-1].distanceTo(q)>1e-3)o.push(q);} if(o.length>2&&o[0].distanceTo(o[o.length-1])<1e-3)o.pop(); return o;};
+    const S=new THREE.Shape(clean(s.getPoints(16))); S.holes.push(new THREE.Path(clean(h.getPoints(16))));
+    return S;
   }
   const GRIP_Y={clasica:32,larga:72,ergo:35,arco:43.5};   // la textura va arriba de esta altura (agarre)
   const gripMat=new THREE.MeshStandardMaterial({roughness:.5,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-4});
@@ -836,7 +839,7 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     if(t==="clasica"){ g=realHandle; }
     else{
       const b=1.6; g=new THREE.ExtrudeGeometry(frameShape(t),{depth:20-2*b,bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelOffset:-b,bevelSegments:3,curveSegments:40});
-      g.translate(0,SHOULDER,b); planarUV(g);
+      g.translate(0,SHOULDER-.3,b); planarUV(g);   // 0,3 mm de solape con el macho
       handleG.add(plug);
     }
     handleMesh=add(handleG,new THREE.Mesh(g,handleMat));
