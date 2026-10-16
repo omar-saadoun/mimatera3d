@@ -431,7 +431,7 @@ const CAT = {
     {id:"celeste",n:"Celeste",d:"Celeste y blanco",p:350,c:"CE",cols:["#6CACE4","#F2F2EE","#6CACE4"]}
   ],
   extras:[
-    {id:"patitas",n:"Patitas antideslizantes",d:"4 patitas de goma para que no se mueva en el piso del auto",p:120,c:"PA"},
+    {id:"patitas",n:"Patitas antideslizantes",d:"6 patitas de goma para que no se mueva en el piso del auto",p:120,c:"PA"},
     {id:"adaptador",n:"Adaptador de termo",d:"Funda en 3 talles para termos de 90 a 97 mm de diámetro",p:190,c:"AT"},
     {id:"aro",n:"Aro para mate chico",d:"Achica el hueco del mate de 86 mm a 65, 70 o 75 mm",p:120,c:"AM"},
     {id:"regalo",n:"Caja de regalo",d:"Con tarjeta escrita a mano",p:200,c:"CR"}
@@ -906,19 +906,46 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
   {
     const steel=new THREE.MeshStandardMaterial({color:lin("#4E5A55"),metalness:.55,roughness:.38});
     const tp=[[0,3],[49,3],[51,7],[51,252],[48,265],[39,282],[37,292],[40,296],[40,330],[0,330]].map(q=>new THREE.Vector2(q[0],q[1]));
-    const termo=add(props,new THREE.Mesh(new THREE.LatheGeometry(tp,72),steel)); termo.position.set(TERMO[0],0,-TERMO[1]);
+    const termo=add(props,new THREE.Mesh(new THREE.LatheGeometry(tp,72),steel)); termo.position.set(TERMO[0],0,-TERMO[1]); termo.name="termo";
     const asaX=TERMO[0]-52.5-20;
     const bar=add(props,new THREE.Mesh(new THREE.BoxGeometry(11,140,22),steel)); bar.position.set(asaX-6,63+70,-TERMO[1]);
     [70,198].forEach(y=>{const a=add(props,new THREE.Mesh(new THREE.BoxGeometry(26,12,22),steel)); a.position.set(asaX+6,y,-TERMO[1]);});
     const gourd=new THREE.MeshStandardMaterial({color:lin("#7A5534"),roughness:.7});
     const mp=[[0,3],[18,4],[31,12],[39,28],[41,45],[38,62],[32,76],[29,84],[30,88],[27,90],[26,86]].map(q=>new THREE.Vector2(q[0],q[1]));
-    const mate=add(props,new THREE.Mesh(new THREE.LatheGeometry(mp,64),gourd)); mate.position.set(MATE[0],0,-MATE[1]);
+    const mate=add(props,new THREE.Mesh(new THREE.LatheGeometry(mp,64),gourd)); mate.position.set(MATE[0],0,-MATE[1]); mate.name="mate";
     const yerba=new THREE.Mesh(new THREE.CircleGeometry(26.5,40),new THREE.MeshStandardMaterial({color:lin("#6E8240"),roughness:.95}));
-    yerba.rotation.x=-Math.PI/2; yerba.position.set(MATE[0],86,-MATE[1]); props.add(yerba);
+    yerba.rotation.x=-Math.PI/2; yerba.position.set(MATE[0],86,-MATE[1]); yerba.name="yerba"; props.add(yerba);
     const bomb=add(props,new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,170,16),new THREE.MeshStandardMaterial({color:lin("#C9CCCF"),metalness:.9,roughness:.25})));
     bomb.position.set(MATE[0]-14,135,-MATE[1]-6); bomb.rotation.z=.22;
   }
   document.getElementById("props").addEventListener("change",e=>{props.visible=e.target.checked; camTo(props.visible?views.props:(mode==="auto"?views.auto:views.mano));});
+
+  /* --- Extras: aro para mate, adaptador de termo y patitas --- */
+  const extraMat=new THREE.MeshStandardMaterial({roughness:.55});
+  const rubber=new THREE.MeshStandardMaterial({color:lin("#1C1C1C"),roughness:.95});
+  const FLOOR=3;
+  // anillo por torno (eje z): rIn..rOut entre z0 y z1, con una ranura opcional de ancho gapW hacia -x
+  function ring(rIn,rOut,z0,z1,gapW){
+    const pr=[[rIn,z0],[rOut,z0],[rOut,z1-.8],[rOut-.4,z1],[rIn+.4,z1],[rIn,z1-.8],[rIn,z0]].map(q=>new THREE.Vector2(q[0],q[1]));
+    const gap=gapW?gapW/rOut:0, start=1.5*Math.PI+gap/2;
+    const g=new THREE.LatheGeometry(pr,96,gapW?start:0,2*Math.PI-gap); g.rotateX(Math.PI/2);
+    const m=new THREE.Mesh(g,extraMat); m.material.side=THREE.DoubleSide; m.castShadow=m.receiveShadow=true; return m;
+  }
+  const aroG=new THREE.Group(), adaptG=new THREE.Group(), feetG=new THREE.Group();
+  aroG.position.set(MATE[0],MATE[1],0); adaptG.position.set(TERMO[0],TERMO[1],0);
+  [aroG,adaptG,feetG].forEach(g=>{g.visible=false; root.add(g);});
+  let aroBuilt=null, adaptBuilt=null;
+  function buildAro(d){ aroG.clear(); aroG.add(ring(d/2,42.7,FLOOR,FLOOR+35)); aroBuilt=d; }
+  function buildAdapt(t){ const inner={A:93,B:96,C:98}[t]||96; adaptG.clear();
+    adaptG.add(ring(inner/2,51.2,FLOOR,50)); adaptG.add(ring(inner/2,51.2,50,FLOOR+110,30)); adaptBuilt=t; }
+  // 6 rebajes de Ø 16 mm en la cara de abajo de la base: las patitas sobresalen 1,5 mm
+  const FEET=[[9.2,67.1],[-83.3,57.3],[-83.3,-3.4],[19.3,-13],[82.4,-1],[82.4,55.1]], FEET_UP=2;
+  FEET.forEach(([x,y])=>{const f=new THREE.Mesh(new THREE.CylinderGeometry(8,8,3,32),rubber); f.rotation.x=Math.PI/2; f.position.set(x,y,1-1.5); f.castShadow=true; feetG.add(f);});
+  let lifted=0, prevEx=null;
+  Object.assign(views,{aro:{p:new THREE.Vector3(-230,330,300),t:new THREE.Vector3(-62,45,27)},adaptador:{p:new THREE.Vector3(170,380,300),t:new THREE.Vector3(53,70,27)},patitas:{p:new THREE.Vector3(-360,14,300),t:new THREE.Vector3(0,14,30)}});
+  function setLift(h){ if(h===lifted) return; lifted=h;
+    root.matrix.set(-1,0,0,0, 0,0,1,h, 0,1,0,0, 0,0,0,1); root.updateMatrixWorld(true);
+    plate.position.y=RECESS_Z+h; }
 
   /* --- Actualizar desde el configurador --- */
   let ready=false;
@@ -931,6 +958,18 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     paintPlate();
     const cols=(r||compute()).st.cols;
     stripes.visible=cols.length>0;
+    extraMat.color.copy(lin(CAT.colors[S.handleColor].hex)); finish(extraMat,S.handleColor);
+    aroG.visible=S.extras.has("aro"); if(aroG.visible&&aroBuilt!==S.aroD) buildAro(S.aroD);
+    adaptG.visible=S.extras.has("adaptador"); if(adaptG.visible&&adaptBuilt!==S.termoT) buildAdapt(S.termoT);
+    feetG.visible=S.extras.has("patitas"); setLift(feetG.visible?FEET_UP:0);
+    // al agregar un extra, la cámara va a mostrarlo
+    const now={aro:aroG.visible,adaptador:adaptG.visible,patitas:feetG.visible};
+    if(prevEx){ const k=["patitas","adaptador","aro"].find(k=>now[k]&&!prevEx[k]); if(k) camTo(views[k]); }
+    prevEx=now;
+    // el termo y el mate de referencia se achican a la medida elegida
+    const ts=adaptG.visible?(({A:91,B:94,C:96.5}[S.termoT]||94)/102):1, ms=aroG.visible?((S.aroD-3)/82):1;
+    const tm=props.getObjectByName("termo"), mm=props.getObjectByName("mate"), ym=props.getObjectByName("yerba");
+    if(tm) tm.scale.set(ts,1,ts); if(mm) mm.scale.set(ms,ms,ms); if(ym){ym.scale.set(ms,ms,1); ym.position.y=86*ms;}
     cols.forEach((c,i)=>stripeMats[i].color.copy(lin(c)));
   }
   window.mat3d={update};
