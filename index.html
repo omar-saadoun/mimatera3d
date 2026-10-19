@@ -169,7 +169,24 @@ legend .delta{font:600 13px/1 var(--mono);color:var(--warm);white-space:nowrap}
 .calc input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .calcout{margin:0;font-size:15px;min-height:3em}
 .calcout b{font-family:var(--mono);font-variant-numeric:tabular-nums}
-#medir{scroll-margin-top:16px}
+#medir,#contacto{scroll-margin-top:16px}
+.warn{clear:both;margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--chip);color:var(--ink);font-size:13.5px;line-height:1.45;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.warn p{margin:0;flex:1 1 100%}
+.btn.sm{padding:8px 12px;font-size:13px}
+.btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed;filter:none}
+.wa-warn{margin:10px 0 0;font-size:13px;color:var(--warm);font-weight:600}
+.contact{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:start}
+.ctext p{margin:0 0 14px;color:var(--muted);max-width:52ch}
+.wa-num{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.wa-num .mono{font-size:20px;font-weight:600;color:var(--ink);user-select:all}
+.cform{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.cform label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.cform input,.cform select,.cform textarea{font:500 15px/1.35 var(--body);padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+.cform textarea{resize:vertical;min-height:96px}
+.cform input[type=text]{text-transform:none;letter-spacing:normal;max-width:none}
+.cform input:focus-visible,.cform select:focus-visible,.cform textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.crow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px}
+.cform .btn{align-self:flex-start}
 .xsub input:focus-visible,.xsub select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 input[type=text]{font:600 16px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;max-width:280px}
 
@@ -191,7 +208,9 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 .bar{display:none}
 @media (max-width:900px){
   .measure{grid-template-columns:1fr}
-  #medir{scroll-margin-top:calc(min(44vh,92vw) + 16px)}
+  #medir,#contacto{scroll-margin-top:calc(min(44vh,92vw) + 16px)}
+  .contact{grid-template-columns:1fr}
+  .crow{grid-template-columns:1fr}
   .intro{grid-template-columns:1fr;padding-block:24px 16px}
   .config{grid-template-columns:1fr}
   .left{display:contents}
@@ -221,7 +240,7 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
     <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="13" width="24" height="13" rx="3" fill="var(--accent)"/><path d="M9 13V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v7h-3V7h-4v6z" fill="var(--ink)"/></svg>
     MiMatera3D
   </div>
-  <nav><a href="#armar">Armá la tuya</a><a href="#como">Cómo funciona</a><a href="#preguntas">Preguntas</a></nav>
+  <nav><a href="#armar">Armá la tuya</a><a href="#como">Cómo funciona</a><a href="#preguntas">Preguntas</a><a href="#contacto">Contacto</a></nav>
 </header>
 
 <div class="intro" id="armar">
@@ -280,6 +299,7 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
         <a class="btn primary" id="wa" href="#" target="_blank" rel="noopener">Pedir por WhatsApp</a>
         <button class="btn" id="copy" type="button">Copiar pedido</button>
       </div>
+      <p class="wa-warn" id="waWarn" hidden></p>
       <p class="fine">Se imprime a pedido: 5 a 7 días hábiles. Retiro sin costo o envío a todo el país. Pagás con Mercado Pago o transferencia.</p>
       <details class="msg"><summary>Ver el mensaje que se envía</summary><pre id="msg"></pre></details>
     </aside>
@@ -289,6 +309,7 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
     <fieldset>
       <legend><span><span class="step">Base</span><h3>Color de la matera</h3></span><span class="delta">incluido</span></legend>
       <div class="swatches" id="g-baseColor"></div>
+      <div class="warn" id="baseWarn" hidden role="status"></div>
     </fieldset>
 
     <fieldset>
@@ -305,7 +326,7 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 
     <fieldset>
       <legend><span><span class="step">Manija · color</span><h3>Color de la manija</h3></span><span class="delta" id="d-handleColor"></span></legend>
-      <p class="hint">Igual que la base: incluido. Otro color: +$80. Acabado seda: +$180.</p>
+      <p class="hint" id="hcHint">Igual que la base: incluido. Otro color: +$80.</p>
       <div class="swatches" id="g-handleColor"></div>
     </fieldset>
 
@@ -326,8 +347,9 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 
     <fieldset>
       <legend><span><span class="step">Base · detalle</span><h3>Franjas de color <span class="tag">Fase 2</span></h3></span><span class="delta" id="d-stripes"></span></legend>
-      <p class="hint">Tres franjas de color alrededor de la base, a 4 mm del piso. Se hacen cambiando el filamento mientras se imprime.</p>
-      <div class="cards" id="g-stripes"></div>
+      <p class="hint">Tres franjas de color alrededor de la base, a 4 mm del piso. Se hacen cambiando el filamento mientras se imprime. Cada franja va sobre ciertas bases para que contraste.</p>
+      <div class="cards three" id="g-stripes"></div>
+      <div class="warn" id="stripeWarn" hidden role="status"></div>
     </fieldset>
 
     <fieldset>
@@ -357,6 +379,7 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
         <li>Dividí el perímetro por 3,14 y vas a tener el diámetro. Por ejemplo, 295 mm ÷ 3,14 = 94 mm, que es el talle B.</li>
       </ol>
       <p>Si tenés calibre, medí el diámetro directo en esa misma zona. El Stanley 1,2 L (Ø 102 mm) entra sin adaptador.</p>
+      <p>¿Tu termo mide menos de 90 mm o entre 97 y 100 mm? <a class="howto" href="#contacto" data-contact="termo">Pedinos un adaptador a medida</a>.</p>
       <p>Para el mate se mide igual, en la parte más ancha que entra en el vaso. Si mide más de 75 mm, no necesitás aro. Si es más chico, elegí el aro de hueco inmediatamente mayor: un mate de 68 mm va con el aro de 70 mm.</p>
     </div>
     <div class="calc">
@@ -371,10 +394,33 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 <section class="band" id="preguntas">
   <h2>Preguntas</h2>
   <div class="faq">
-    <details><summary>¿Qué termo entra?</summary><p>Está hecha para el Stanley 1,2 L (Ø 102 mm), con ranura para el asa. Para termos de 90 a 97 mm de diámetro sumá el adaptador: nos decís la medida y lo hacemos a medida.</p></details>
+    <details><summary>¿Qué termo entra?</summary><p>Está hecha para el Stanley 1,2 L (Ø 102 mm), con ranura para el asa. Para termos de 90 a 97 mm de diámetro sumá el adaptador. Si tu termo tiene otra medida, <a class="howto" href="#contacto" data-contact="termo">pedinos un adaptador a medida</a>.</p></details>
     <details><summary>¿Aguanta el sol del auto?</summary><p>Sí. Usamos PETG, que no se deforma con el calor de un auto al sol como el PLA.</p></details>
     <details><summary>¿Cómo se usa en el auto?</summary><p>Sacás la manija de arriba y la encastrás atrás, a ras del piso. Queda horizontal y se mete entre el respaldo y el asiento del acompañante.</p></details>
     <details><summary>¿Puedo cambiar la manija después?</summary><p>Sí. La manija encastra a presión, así que podés comprar otra forma o color y cambiarla en segundos.</p></details>
+  </div>
+</section>
+
+<section class="band" id="contacto">
+  <h2>Contacto</h2>
+  <div class="contact">
+    <div class="ctext">
+      <p>¿Tenés una consulta, un termo de otra medida o un pedido especial? Escribinos por WhatsApp y te respondemos.</p>
+      <div class="wa-num"><span class="mono" id="waNum">+598 99 892 175</span><button class="btn sm" type="button" id="copyNum">Copiar número</button></div>
+    </div>
+    <form class="cform" id="cform">
+      <label for="cMotivo">Motivo<select id="cMotivo">
+        <option value="consulta">Consulta general</option>
+        <option value="termo">Adaptador para otro tamaño de termo</option>
+        <option value="especial">Pedido especial</option>
+      </select></label>
+      <div class="crow" id="cTermo" hidden>
+        <label for="cTermoD">Diámetro del termo, en mm<input type="number" id="cTermoD" inputmode="decimal" min="50" max="130" placeholder="88"></label>
+        <label for="cTermoM">Marca y capacidad<input type="text" id="cTermoM" autocomplete="off" placeholder="Ej.: Lumilagro, 1 L"></label>
+      </div>
+      <label for="cMsg">Mensaje<textarea id="cMsg" rows="4" placeholder="Contanos qué necesitás"></textarea></label>
+      <a class="btn primary" id="cSend" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+    </form>
   </div>
 </section>
 
@@ -389,21 +435,23 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 <script>
 /* ======= Catálogo: editá precios y opciones acá ======= */
 const WHATSAPP = "59899892175";
+// Bronce: si la muestra tiene brillo metálico, cambiá a true y pasa a "especial" (+$180)
+const BRONCE_METALICO = false;
 const CAT = {
   base: 1490,
+  // stock: PETG Grilon3. Bases = los 4 del AMS de la Bambu A1; acentos para manija y placa
   colors: {
-    grafito:{n:"Grafito",hex:"#2C2F2D",tier:"std",c:"GR"},
-    hormigon:{n:"Hormigón",hex:"#8D918A",tier:"std",c:"HO"},
-    yerba:{n:"Yerba",hex:"#57713F",tier:"std",c:"YE"},
-    arena:{n:"Arena",hex:"#D5C6A2",tier:"std",c:"AR"},
-    hueso:{n:"Blanco hueso",hex:"#EEEAE0",tier:"std",c:"BH"},
-    rojo:{n:"Rojo",hex:"#B03A2F",tier:"std",c:"RO"},
-    azul:{n:"Azul",hex:"#25508E",tier:"std",c:"AZ"},
-    cobre:{n:"Cobre seda",hex:"#B8734A",tier:"esp",c:"CO"},
-    oro:{n:"Oro seda",hex:"#C9A444",tier:"esp",c:"OR"}
+    negro:{n:"Negro",hex:"#1F2020",tier:"std",c:"NE",base:"Negra"},
+    acero:{n:"Gris Acero",hex:"#5E6367",tier:"std",c:"GA",base:"Gris Acero"},
+    blanco:{n:"Blanco",hex:"#F1F1EE",tier:"std",c:"BL",base:"Blanca"},
+    chocolate:{n:"Chocolate",hex:"#5B3B2A",tier:"std",c:"CH",base:"Chocolate"},
+    rojo:{n:"Rojo",hex:"#B3262E",tier:"std",c:"RO"},
+    azul:{n:"Azul",hex:"#1F4E9A",tier:"std",c:"AZ"},
+    naranja:{n:"Naranja Praga",hex:"#E0622A",tier:"std",c:"NA"},
+    bronce:{n:"Bronce",hex:"#9C6B3C",tier:BRONCE_METALICO?"esp":"std",c:"BR"}
   },
-  baseColors:["grafito","hormigon","yerba","arena"],
-  handleColors:["grafito","hormigon","yerba","arena","hueso","rojo","azul","cobre","oro"],
+  baseColors:["negro","acero","blanco","chocolate"],
+  handleColors:["negro","acero","blanco","chocolate","rojo","azul","naranja","bronce"],
   handleColorPrice:{same:0,std:80,esp:180},
   handleType:[
     {id:"clasica",n:"Clásica",d:"La actual, con agarre recto",p:0,c:"CL"},
@@ -421,14 +469,14 @@ const CAT = {
     {id:"marca",n:"Placa MiMatera3D",d:"Nuestra marca en relieve",p:0,c:"M"},
     {id:"texto",n:"Nombre o iniciales",d:"Hasta 10 caracteres en relieve",p:290,c:"T"}
   ],
-  plateColors:["hueso","grafito","cobre","oro"],
+  plateColors:["blanco","negro","bronce"],
+  plateInk:{blanco:"negro",bronce:"negro",negro:"blanco"},   // color del relieve, en contraste
   plateEspPrice:100,
   termoSizes:[{id:"A",min:90,max:92},{id:"B",min:93,max:95},{id:"C",min:96,max:97}],
   stripes:[
     {id:"none",n:"Sin franjas",p:0,c:"0",cols:[]},
-    {id:"tricolor",n:"Tricolor",d:"Rojo, blanco y azul",p:350,c:"TR",cols:["#B4262E","#F2F2EE","#1D3F8B"]},
-    {id:"aurinegra",n:"Aurinegra",d:"Amarillo y negro",p:350,c:"AN",cols:["#F2C230","#151515","#F2C230"]},
-    {id:"celeste",n:"Celeste",d:"Celeste y blanco",p:350,c:"CE",cols:["#6CACE4","#F2F2EE","#6CACE4"]}
+    {id:"nacional",n:"Nacional",d:"Azul, blanco y rojo. Sobre base Negra o Gris Acero",txt:"Azul, blanco y rojo",p:350,c:"NC",cols:["#1F4E9A","#F1F1EE","#B3262E"],bases:["negro","acero"]},
+    {id:"penarol",n:"Peñarol",d:"Amarillo, negro y amarillo. Sobre base Blanca o Gris Acero",txt:"Amarillo, negro y amarillo",p:350,c:"PE",cols:["#F2C230","#1F2020","#F2C230"],bases:["blanco","acero"]}
   ],
   extras:[
     {id:"patitas",n:"Patitas antideslizantes",d:"6 patitas de goma para que no se mueva en el piso del auto",p:120,c:"PA"},
@@ -439,8 +487,8 @@ const CAT = {
 };
 
 /* ======= Estado (ejemplo inicial) ======= */
-const S = {baseColor:"grafito",handleType:"larga",pattern:"estrias",handleColor:"cobre",
-  plate:"texto",plateText:"MARCELO",plateColor:"hueso",stripes:"none",extras:new Set(),termoT:"B",aroD:70};
+const S = {baseColor:"negro",handleType:"larga",pattern:"estrias",handleColor:"bronce",
+  plate:"texto",plateText:"MARCELO",plateColor:"blanco",stripes:"none",extras:new Set(),termoT:"B",aroD:70};
 
 const $ = id => document.getElementById(id);
 const fmt = n => "$ " + n.toLocaleString("es-UY");
@@ -477,7 +525,7 @@ function swatchGroup(el,name,ids,priceFn){
   ids.forEach(id=>{
     const c=CAT.colors[id];
     const l=document.createElement("label");l.className="sw";
-    l.innerHTML=`<input type="radio" name="${name}" id="${name}-${id}" value="${id}"><span class="dot" style="background:${c.hex}"></span><small>${c.n}</small>${c.tier==="esp"?'<span class="esp">seda</span>':""}`;
+    l.innerHTML=`<input type="radio" name="${name}" id="${name}-${id}" value="${id}"><span class="dot" style="background:${c.hex}"></span><small>${c.n}</small>${c.tier==="esp"?'<span class="esp">metálico</span>':""}`;
     el.appendChild(l);
   });
 }
@@ -534,18 +582,23 @@ function handleColorCost(){
   if(S.handleColor===S.baseColor) return 0;
   return CAT.handleColorPrice[CAT.colors[S.handleColor].tier];
 }
+const cName=id=>CAT.colors[id].n+" ("+CAT.colors[id].c+")";
+function plateInkHex(){return CAT.colors[CAT.plateInk[S.plateColor]||"negro"].hex;}
+// franja con una base que no corresponde: devuelve las bases permitidas
+function stripeConflict(){const st=byId(CAT.stripes,S.stripes); return st&&st.bases&&!st.bases.includes(S.baseColor)?st:null;}
+const baseList=ids=>ids.map(id=>CAT.colors[id].base).join(" o ");
 function plateColorCost(){return S.plate!=="marca" && CAT.colors[S.plateColor].tier==="esp" ? CAT.plateEspPrice : 0;}
 function compute(){
   const L=[]; const ht=byId(CAT.handleType,S.handleType), pt=byId(CAT.pattern,S.pattern), pl=byId(CAT.plate,S.plate), st=byId(CAT.stripes,S.stripes);
-  L.push({n:"Matera base",s:"Color "+CAT.colors[S.baseColor].n,p:CAT.base});
+  L.push({n:"Matera base",s:"Color "+cName(S.baseColor),p:CAT.base});
   L.push({n:"Manija "+ht.n,s:"Textura "+pt.n.toLowerCase(),p:ht.p+pt.p});
   const hc=handleColorCost();
-  L.push({n:"Color de manija",s:CAT.colors[S.handleColor].n+(S.handleColor===S.baseColor?" (igual a la base)":""),p:hc});
+  L.push({n:"Color de manija",s:cName(S.handleColor)+(S.handleColor===S.baseColor?", igual a la base":""),p:hc});
   {
     const txt=S.plate==="texto"?`“${(S.plateText||"").trim()||"—"}”`:"MiMatera3D";
-    L.push({n:S.plate==="texto"?"Placa: "+pl.n:pl.n,s:txt+" en "+CAT.colors[S.plateColor].n.toLowerCase(),p:pl.p+plateColorCost()});
+    L.push({n:S.plate==="texto"?"Placa: "+pl.n:pl.n,s:txt+" en "+cName(S.plateColor)+", relieve "+CAT.colors[CAT.plateInk[S.plateColor]].n.toLowerCase(),p:pl.p+plateColorCost()});
   }
-  if(S.stripes!=="none") L.push({n:"Franjas "+st.n,s:st.d,p:st.p});
+  if(S.stripes!=="none") L.push({n:"Franjas "+st.n,s:st.txt,p:st.p});
   const tz=CAT.termoSizes.find(t=>t.id===S.termoT)||CAT.termoSizes[1];
   const exSub={adaptador:"Talle "+tz.id+", para termos de "+tz.min+" a "+tz.max+" mm",aro:"Hueco de Ø "+S.aroD+" mm"};
   CAT.extras.forEach(o=>{if(S.extras.has(o.id)) L.push({n:o.n,s:exSub[o.id]||"",p:o.p});});
@@ -578,7 +631,7 @@ function drawPreview(r){
   const pc=CAT.colors[S.plateColor].hex;
   $("plate-face").setAttribute("fill",pc);
   const t=$("plate-txt");
-  t.setAttribute("fill",isLight(pc)?"#1E1E1C":"#F2F0EA");
+  t.setAttribute("fill",plateInkHex());
   if(S.plate==="texto"){t.textContent=(S.plateText||"").trim().toUpperCase()||"TU NOMBRE";t.setAttribute("font-size",t.textContent.length>7?"14":"17");}
   else{t.textContent="MiMatera3D";t.setAttribute("font-size","14");}
 
@@ -614,13 +667,22 @@ function render(){
   $("plateTextWrap").hidden=S.plate!=="texto";
   $("xsub-adaptador").hidden=!S.extras.has("adaptador");
   $("xsub-aro").hidden=!S.extras.has("aro");
+  // franja que no va con la base elegida: avisar y proponer las bases compatibles
+  const bad=stripeConflict();
+  ["stripeWarn","baseWarn"].forEach(id=>{const w=$(id); w.hidden=!bad;
+    if(bad) w.innerHTML=`<p>La franja <b>${bad.n}</b> solo se hace sobre base ${baseList(bad.bases)}, y elegiste base ${CAT.colors[S.baseColor].base}.</p>`+
+      bad.bases.map(b=>`<button type="button" class="btn sm" data-setbase="${b}">Cambiar a base ${CAT.colors[b].base}</button>`).join("")+
+      `<button type="button" class="btn sm" data-setstripe="none">Sacar la franja</button>`;});
 
   const msg=["¡Hola MiMatera3D! Quiero esta matera:",
     ...r.L.map(l=>"• "+l.n+(l.s?" — "+l.s:"")+" ("+(l===r.L[0]?fmt(l.p):plus(l.p))+")"),
     "Código: "+r.code,
     "Total: "+fmt(r.total)].join("\n");
   $("msg").textContent=msg;
-  $("wa").href="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(msg);
+  const wa=$("wa");
+  if(bad){ wa.removeAttribute("href"); wa.setAttribute("aria-disabled","true"); wa.textContent="Elegí una base compatible";
+    $("waWarn").hidden=false; $("waWarn").textContent=`La franja ${bad.n} va sobre base ${baseList(bad.bases)}.`; }
+  else{ wa.href="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(msg); wa.removeAttribute("aria-disabled"); wa.textContent="Pedir por WhatsApp"; $("waWarn").hidden=true; }
   drawPreview(r);
   if(window.mat3d) window.mat3d.update(r);
   try{localStorage.setItem("matera-config",JSON.stringify({...S,extras:[...S.extras]}));}catch(e){}
@@ -636,6 +698,13 @@ $("opts").addEventListener("change",e=>{
   render();
 });
 $("plateText").addEventListener("input",e=>{S.plateText=e.target.value;render();});
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-setbase],[data-setstripe]");
+  if(b){ if(b.dataset.setbase) S.baseColor=b.dataset.setbase; if(b.dataset.setstripe) S.stripes=b.dataset.setstripe; syncInputs(); render(); return; }
+  const w=e.target.closest('#wa[aria-disabled="true"]');
+  if(w){ e.preventDefault(); $("stripeWarn").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"}); }
+});
+$("hcHint").textContent=`Igual que la base: incluido. Otro color: +${fmt(CAT.handleColorPrice.std)}.`+(BRONCE_METALICO?` Bronce metálico: +${fmt(CAT.handleColorPrice.esp)}.`:"");
 $("copy").addEventListener("click",()=>{
   const txt=$("msg").textContent, b=$("copy");
   const done=()=>{b.textContent="Copiado";setTimeout(()=>b.textContent="Copiar pedido",1600);};
@@ -648,7 +717,7 @@ function termoFit(d){
   if(d>=99.5&&d<=103) return {ok:false,msg:"Es la medida del Stanley 1,2 L: <b>no necesitás adaptador</b>."};
   const t=CAT.termoSizes.find(t=>d>=t.min-0.5&&d<=t.max+0.5);
   if(t) return {ok:true,t,msg:`Tu termo mide <b>Ø ${String(d).replace(".",",")} mm</b>: va el <b>talle ${t.id}</b> (termos de ${t.min} a ${t.max} mm).`};
-  return {ok:false,msg:`Tu termo mide <b>Ø ${String(d).replace(".",",")} mm</b>. No tenemos adaptador para esa medida: escribinos por WhatsApp y lo vemos.`};
+  return {ok:false,d,msg:`Tu termo mide <b>Ø ${String(d).replace(".",",")} mm</b>. No tenemos un talle para esa medida, pero lo podemos hacer a medida: <a class="howto" href="#contacto" data-contact="termo" data-d="${d}">pedinos un adaptador</a>.`};
 }
 $("perim").addEventListener("input",e=>{
   const v=parseFloat(String(e.target.value).replace(",","."));
@@ -666,7 +735,41 @@ $("useT").addEventListener("click",e=>{
 
 // recuperar la última configuración de este navegador
 try{const saved=JSON.parse(localStorage.getItem("matera-config")||"null");
-  if(saved){Object.assign(S,saved,{extras:new Set((saved.extras||[]).filter(id=>CAT.extras.some(o=>o.id===id))),termoT:CAT.termoSizes.some(t=>t.id===saved.termoT)?saved.termoT:"B",aroD:saved.aroD||70}); if(!CAT.plate.some(o=>o.id===S.plate)) S.plate=S.plate==="none"?"marca":"texto";syncInputs();}}catch(e){}
+  if(saved){Object.assign(S,saved,{extras:new Set((saved.extras||[]).filter(id=>CAT.extras.some(o=>o.id===id))),termoT:CAT.termoSizes.some(t=>t.id===saved.termoT)?saved.termoT:"B",aroD:saved.aroD||70}); if(!CAT.plate.some(o=>o.id===S.plate)) S.plate=S.plate==="none"?"marca":"texto";
+    const OLD={grafito:"negro",hormigon:"acero",arena:"blanco",yerba:"chocolate",hueso:"blanco",cobre:"bronce",oro:"bronce"};
+    const fix=(v,list,def)=>{v=OLD[v]||v; return list.includes(v)?v:def;};
+    S.baseColor=fix(S.baseColor,CAT.baseColors,"negro"); S.handleColor=fix(S.handleColor,CAT.handleColors,"bronce"); S.plateColor=fix(S.plateColor,CAT.plateColors,"blanco");
+    if(!CAT.stripes.some(o=>o.id===S.stripes)) S.stripes={tricolor:"nacional",aurinegra:"penarol"}[S.stripes]||"none";
+    syncInputs();}}catch(e){}
+
+// contacto: arma el mensaje de WhatsApp; los accesos [data-contact] lo abren con el motivo elegido
+const MOTIVOS={consulta:"Tengo una consulta",termo:"Quiero un adaptador para un termo de otra medida",especial:"Quiero hacer un pedido especial"};
+function contactUpdate(){
+  const m=$("cMotivo").value; $("cTermo").hidden=m!=="termo";
+  const lines=["¡Hola MiMatera3D! "+MOTIVOS[m]+"."];
+  if(m==="termo"){ const d=$("cTermoD").value.trim(), mm=$("cTermoM").value.trim();
+    if(d) lines.push("Diámetro del termo: "+d.replace(".",",")+" mm"); if(mm) lines.push("Termo: "+mm); }
+  const t=$("cMsg").value.trim(); if(t) lines.push(t);
+  $("cSend").href="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(lines.join("\n"));
+}
+["cMotivo","cTermoD","cTermoM","cMsg"].forEach(id=>$(id).addEventListener("input",contactUpdate));
+$("cMotivo").addEventListener("change",contactUpdate);
+$("cform").addEventListener("submit",e=>e.preventDefault());
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-contact]"); if(!a) return;
+  e.preventDefault();
+  $("cMotivo").value=a.dataset.contact;
+  if(a.dataset.d) $("cTermoD").value=a.dataset.d;
+  contactUpdate();
+  $("contacto").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
+  setTimeout(()=>{const f=a.dataset.contact==="termo"&&!$("cTermoD").value?$("cTermoD"):$("cMsg"); try{f.focus({preventScroll:true});}catch(err){}},400);
+});
+$("copyNum").addEventListener("click",()=>{
+  const b=$("copyNum"), done=()=>{b.textContent="Copiado";setTimeout(()=>b.textContent="Copiar número",1600);};
+  const fb=()=>{const r=document.createRange();r.selectNodeContents($("waNum"));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Seleccionado";};
+  try{navigator.clipboard.writeText("+"+WHATSAPP).then(done,fb);}catch(e){fb();}
+});
+contactUpdate();
 render();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -783,7 +886,7 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     const ctx=plateCanvas.getContext("2d"), hex=CAT.colors[S.plateColor].hex;
     ctx.fillStyle=hex; ctx.fillRect(0,0,700,220);
     const txt=S.plate==="texto"?((S.plateText||"").trim().toUpperCase()||"TU NOMBRE"):"MiMatera3D";
-    ctx.fillStyle=isLight(hex)?"#1E1E1C":"#F2F0EA";
+    ctx.fillStyle=plateInkHex();
     const PX=700/69.4, MAXW=62*PX, CAPH=.7;
     let size=Math.round(11*PX/CAPH); const minSize=Math.round(7*PX/CAPH);
     ctx.textAlign="center"; ctx.textBaseline="middle";
@@ -791,7 +894,7 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     setF(); while(ctx.measureText(txt).width>MAXW&&size>minSize){size-=3; setF();}
     const w=ctx.measureText(txt).width;
     ctx.save(); ctx.translate(350,114); ctx.scale(Math.min(1,MAXW/w),1);
-    ctx.shadowColor="rgba(0,0,0,.35)"; ctx.shadowOffsetY=5; ctx.shadowBlur=5;
+    ctx.shadowColor=S.plateColor==="negro"?"rgba(0,0,0,.6)":"rgba(0,0,0,.35)"; ctx.shadowOffsetY=5; ctx.shadowBlur=5;
     ctx.fillText(txt,0,0); ctx.restore();
     plateTex.needsUpdate=true;
     plateSide.color.copy(lin(hex)); plateFront.color.set(0xffffff);
