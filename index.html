@@ -347,7 +347,6 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 
     <fieldset>
       <legend><span><span class="step">Base · detalle</span><h3>Franjas de color <span class="tag">Fase 2</span></h3></span><span class="delta" id="d-stripes"></span></legend>
-      <p class="hint">Tres franjas de color alrededor de la base, a 4 mm del piso. Se hacen cambiando el filamento mientras se imprime. Cada franja va sobre ciertas bases para que contraste.</p>
       <div class="cards three" id="g-stripes"></div>
       <div class="warn" id="stripeWarn" hidden role="status"></div>
     </fieldset>
@@ -416,7 +415,7 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
       </select></label>
       <div class="crow" id="cTermo" hidden>
         <label for="cTermoD">Diámetro del termo, en mm<input type="number" id="cTermoD" inputmode="decimal" min="50" max="130" placeholder="88"></label>
-        <label for="cTermoM">Marca y capacidad<input type="text" id="cTermoM" autocomplete="off" placeholder="Ej.: Lumilagro, 1 L"></label>
+        <label for="cTermoM">Marca y capacidad<input type="text" id="cTermoM" autocomplete="off" placeholder="Ej.: de acero, 1 L"></label>
       </div>
       <label for="cMsg">Mensaje<textarea id="cMsg" rows="4" placeholder="Contanos qué necesitás"></textarea></label>
       <a class="btn primary" id="cSend" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
@@ -475,8 +474,8 @@ const CAT = {
   termoSizes:[{id:"A",min:90,max:92},{id:"B",min:93,max:95},{id:"C",min:96,max:97}],
   stripes:[
     {id:"none",n:"Sin franjas",p:0,c:"0",cols:[]},
-    {id:"nacional",n:"Nacional",d:"Azul, blanco y rojo. Sobre base Negra o Gris Acero",txt:"Azul, blanco y rojo",p:350,c:"NC",cols:["#1F4E9A","#F1F1EE","#B3262E"],bases:["negro","acero"]},
-    {id:"penarol",n:"Peñarol",d:"Amarillo, negro y amarillo. Sobre base Blanca o Gris Acero",txt:"Amarillo, negro y amarillo",p:350,c:"PE",cols:["#F2C230","#1F2020","#F2C230"],bases:["blanco","acero"]}
+    {id:"tricolor",n:"Azul, blanco y rojo",d:"Sobre base Negra o Gris Acero",p:350,c:"TR",cols:["#1F4E9A","#F1F1EE","#B3262E"],bases:["negro","acero"]},
+    {id:"amarillonegro",n:"Amarillo y negro",d:"Sobre base Negra, Blanca o Gris Acero",p:350,c:"AN",cols:["#F2C230","#1F2020","#F2C230"],bases:["negro","blanco","acero"]}
   ],
   extras:[
     {id:"patitas",n:"Patitas antideslizantes",d:"6 patitas de goma para que no se mueva en el piso del auto",p:120,c:"PA"},
@@ -586,7 +585,7 @@ const cName=id=>CAT.colors[id].n+" ("+CAT.colors[id].c+")";
 function plateInkHex(){return CAT.colors[CAT.plateInk[S.plateColor]||"negro"].hex;}
 // franja con una base que no corresponde: devuelve las bases permitidas
 function stripeConflict(){const st=byId(CAT.stripes,S.stripes); return st&&st.bases&&!st.bases.includes(S.baseColor)?st:null;}
-const baseList=ids=>ids.map(id=>CAT.colors[id].base).join(" o ");
+const baseList=ids=>{const n=ids.map(id=>CAT.colors[id].base); return n.length>1?n.slice(0,-1).join(", ")+" o "+n[n.length-1]:n[0];};
 function plateColorCost(){return S.plate!=="marca" && CAT.colors[S.plateColor].tier==="esp" ? CAT.plateEspPrice : 0;}
 function compute(){
   const L=[]; const ht=byId(CAT.handleType,S.handleType), pt=byId(CAT.pattern,S.pattern), pl=byId(CAT.plate,S.plate), st=byId(CAT.stripes,S.stripes);
@@ -598,7 +597,7 @@ function compute(){
     const txt=S.plate==="texto"?`“${(S.plateText||"").trim()||"—"}”`:"MiMatera3D";
     L.push({n:S.plate==="texto"?"Placa: "+pl.n:pl.n,s:txt+" en "+cName(S.plateColor)+", relieve "+CAT.colors[CAT.plateInk[S.plateColor]].n.toLowerCase(),p:pl.p+plateColorCost()});
   }
-  if(S.stripes!=="none") L.push({n:"Franjas "+st.n,s:st.txt,p:st.p});
+  if(S.stripes!=="none") L.push({n:"Franjas de color",s:st.n,p:st.p});
   const tz=CAT.termoSizes.find(t=>t.id===S.termoT)||CAT.termoSizes[1];
   const exSub={adaptador:"Talle "+tz.id+", para termos de "+tz.min+" a "+tz.max+" mm",aro:"Hueco de Ø "+S.aroD+" mm"};
   CAT.extras.forEach(o=>{if(S.extras.has(o.id)) L.push({n:o.n,s:exSub[o.id]||"",p:o.p});});
@@ -670,7 +669,7 @@ function render(){
   // franja que no va con la base elegida: avisar y proponer las bases compatibles
   const bad=stripeConflict();
   ["stripeWarn","baseWarn"].forEach(id=>{const w=$(id); w.hidden=!bad;
-    if(bad) w.innerHTML=`<p>La franja <b>${bad.n}</b> solo se hace sobre base ${baseList(bad.bases)}, y elegiste base ${CAT.colors[S.baseColor].base}.</p>`+
+    if(bad) w.innerHTML=`<p>La franja <b>${bad.n.toLowerCase()}</b> solo se hace sobre base ${baseList(bad.bases)}, y elegiste base ${CAT.colors[S.baseColor].base}.</p>`+
       bad.bases.map(b=>`<button type="button" class="btn sm" data-setbase="${b}">Cambiar a base ${CAT.colors[b].base}</button>`).join("")+
       `<button type="button" class="btn sm" data-setstripe="none">Sacar la franja</button>`;});
 
@@ -681,7 +680,7 @@ function render(){
   $("msg").textContent=msg;
   const wa=$("wa");
   if(bad){ wa.removeAttribute("href"); wa.setAttribute("aria-disabled","true"); wa.textContent="Elegí una base compatible";
-    $("waWarn").hidden=false; $("waWarn").textContent=`La franja ${bad.n} va sobre base ${baseList(bad.bases)}.`; }
+    $("waWarn").hidden=false; $("waWarn").textContent=`La franja ${bad.n.toLowerCase()} va sobre base ${baseList(bad.bases)}.`; }
   else{ wa.href="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(msg); wa.removeAttribute("aria-disabled"); wa.textContent="Pedir por WhatsApp"; $("waWarn").hidden=true; }
   drawPreview(r);
   if(window.mat3d) window.mat3d.update(r);
@@ -739,7 +738,7 @@ try{const saved=JSON.parse(localStorage.getItem("matera-config")||"null");
     const OLD={grafito:"negro",hormigon:"acero",arena:"blanco",yerba:"chocolate",hueso:"blanco",cobre:"bronce",oro:"bronce"};
     const fix=(v,list,def)=>{v=OLD[v]||v; return list.includes(v)?v:def;};
     S.baseColor=fix(S.baseColor,CAT.baseColors,"negro"); S.handleColor=fix(S.handleColor,CAT.handleColors,"bronce"); S.plateColor=fix(S.plateColor,CAT.plateColors,"blanco");
-    if(!CAT.stripes.some(o=>o.id===S.stripes)) S.stripes={tricolor:"nacional",aurinegra:"penarol"}[S.stripes]||"none";
+    if(!CAT.stripes.some(o=>o.id===S.stripes)) S.stripes={nacional:"tricolor",penarol:"amarillonegro",aurinegra:"amarillonegro"}[S.stripes]||"none";
     syncInputs();}}catch(e){}
 
 // contacto: arma el mensaje de WhatsApp; los accesos [data-contact] lo abren con el motivo elegido
