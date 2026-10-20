@@ -438,19 +438,20 @@ const WHATSAPP = "59899892175";
 const BRONCE_METALICO = false;
 const CAT = {
   base: 1490,
-  // stock: PETG Grilon3. Bases = los 4 del AMS de la Bambu A1; acentos para manija y placa
+  // PETG con stock en Macrotec (filamentos.macrotec.com.uy, 20/10/2026): marca y SKU de cada color.
+  // Bases = los 4 del AMS de la Bambu A1, todos Grilon3; acentos para manija y placa.
   colors: {
-    negro:{n:"Negro",hex:"#1F2020",tier:"std",c:"NE",base:"Negra"},
-    acero:{n:"Gris Acero",hex:"#5E6367",tier:"std",c:"GA",base:"Gris Acero"},
-    blanco:{n:"Blanco",hex:"#F1F1EE",tier:"std",c:"BL",base:"Blanca"},
-    chocolate:{n:"Chocolate",hex:"#5B3B2A",tier:"std",c:"CH",base:"Chocolate"},
-    rojo:{n:"Rojo",hex:"#B3262E",tier:"std",c:"RO"},
-    azul:{n:"Azul",hex:"#1F4E9A",tier:"std",c:"AZ"},
-    naranja:{n:"Naranja Praga",hex:"#E0622A",tier:"std",c:"NA"},
-    bronce:{n:"Bronce",hex:"#9C6B3C",tier:BRONCE_METALICO?"esp":"std",c:"BR"}
+    negro:{n:"Negro",hex:"#2D2926",tier:"std",c:"NE",base:"Negra",marca:"Grilon3",sku:"M77ING175CJ"},
+    acero:{n:"Gris Acero",hex:"#333F48",tier:"std",c:"GA",base:"Gris Acero",marca:"Grilon3",sku:"M77IGA175CJ"},
+    plata:{n:"Gris Plata",hex:"#63666A",tier:"std",c:"GP",base:"Gris Plata",marca:"Grilon3",sku:"M77IGR175CJ"},
+    blanco:{n:"Blanco",hex:"#F4F5F0",tier:"std",c:"BL",base:"Blanca",marca:"Grilon3",sku:"M77IBL175CJ"},
+    rojo:{n:"Rojo",hex:"#DF281F",tier:"std",c:"RO",marca:"3n3",sku:"M88IRJ175CJ"},
+    azul:{n:"Azul",hex:"#3871C1",tier:"std",c:"AZ",marca:"3n3",sku:"M88IAZ175CJ"},
+    naranja:{n:"Naranja Praga",hex:"#FE5000",tier:"std",c:"NA",marca:"Grilon3",sku:"M77INP175CJ"},
+    bronce:{n:"Bronce",hex:"#C58A3F",tier:BRONCE_METALICO?"esp":"std",c:"BR",marca:"3n3",sku:"M88IBR175CJ"}
   },
-  baseColors:["negro","acero","blanco","chocolate"],
-  handleColors:["negro","acero","blanco","chocolate","rojo","azul","naranja","bronce"],
+  baseColors:["negro","acero","plata","blanco"],
+  handleColors:["negro","acero","plata","blanco","rojo","azul","naranja","bronce"],
   handleColorPrice:{same:0,std:80,esp:180},
   handleType:[
     {id:"clasica",n:"Clásica",d:"La actual, con agarre recto",p:0,c:"CL"},
@@ -474,8 +475,9 @@ const CAT = {
   termoSizes:[{id:"A",min:90,max:92},{id:"B",min:93,max:95},{id:"C",min:96,max:97}],
   stripes:[
     {id:"none",n:"Sin franjas",p:0,c:"0",cols:[]},
-    {id:"tricolor",n:"Azul, blanco y rojo",d:"Sobre base Negra o Gris Acero",p:350,c:"TR",cols:["#1F4E9A","#F1F1EE","#B3262E"],bases:["negro","acero"]},
-    {id:"amarillonegro",n:"Amarillo y negro",d:"Sobre base Negra, Blanca o Gris Acero",p:350,c:"AN",cols:["#F2C230","#1F2020","#F2C230"],bases:["negro","blanco","acero"]}
+    {id:"tricolor",n:"Azul, blanco y rojo",d:"Sobre base Negra o Gris Acero",p:350,c:"TR",cols:["#3871C1","#F4F5F0","#DF281F"],bases:["negro","acero"]},
+    // amarillo: en PETG solo hay Grilon3 Clear Amarillo (translúcido, M77IAM175CJ)
+    {id:"amarillonegro",n:"Amarillo y negro",d:"Sobre base Negra, Blanca o Gris Acero",p:350,c:"AN",cols:["#FBE122","#2D2926","#FBE122"],bases:["negro","blanco","acero"]}
   ],
   extras:[
     {id:"patitas",n:"Patitas antideslizantes",d:"6 patitas de goma para que no se mueva en el piso del auto",p:120,c:"PA"},
@@ -735,7 +737,7 @@ $("useT").addEventListener("click",e=>{
 // recuperar la última configuración de este navegador
 try{const saved=JSON.parse(localStorage.getItem("matera-config")||"null");
   if(saved){Object.assign(S,saved,{extras:new Set((saved.extras||[]).filter(id=>CAT.extras.some(o=>o.id===id))),termoT:CAT.termoSizes.some(t=>t.id===saved.termoT)?saved.termoT:"B",aroD:saved.aroD||70}); if(!CAT.plate.some(o=>o.id===S.plate)) S.plate=S.plate==="none"?"marca":"texto";
-    const OLD={grafito:"negro",hormigon:"acero",arena:"blanco",yerba:"chocolate",hueso:"blanco",cobre:"bronce",oro:"bronce"};
+    const OLD={grafito:"negro",hormigon:"plata",arena:"blanco",yerba:"plata",chocolate:"plata",hueso:"blanco",cobre:"bronce",oro:"bronce"};
     const fix=(v,list,def)=>{v=OLD[v]||v; return list.includes(v)?v:def;};
     S.baseColor=fix(S.baseColor,CAT.baseColors,"negro"); S.handleColor=fix(S.handleColor,CAT.handleColors,"bronce"); S.plateColor=fix(S.plateColor,CAT.plateColors,"blanco");
     if(!CAT.stripes.some(o=>o.id===S.stripes)) S.stripes={nacional:"tricolor",penarol:"amarillonegro",aurinegra:"amarillonegro"}[S.stripes]||"none";
