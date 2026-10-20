@@ -345,6 +345,10 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
           <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Color de la placa</div>
           <div class="swatches" id="g-plateColor"></div>
         </div>
+        <div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Color del relieve</div>
+          <div class="swatches" id="g-plateInk"></div>
+        </div>
       </div>
     </fieldset>
 
@@ -479,15 +483,15 @@ const CAT = {
     {id:"marca",n:"Placa MiMatera3D",d:"Nuestra marca en relieve",p:0,c:"M"},
     {id:"texto",n:"Nombre o iniciales",d:"Hasta 10 caracteres en relieve",p:290,c:"T"}
   ],
-  plateColors:["blanco","negro","bronce"],
-  plateInk:{blanco:"negro",bronce:"negro",negro:"blanco"},   // color del relieve, en contraste
+  // placa y relieve: se imprimen aparte, en dos colores (cambio de filamento en la capa del relieve)
+  plateColors:["negro","acero","plata","espacial","nova","blanco","rojo","naranja","bronce","verde","azul","traful"],
   plateEspPrice:100,
   termoSizes:[{id:"A",min:90,max:92},{id:"B",min:93,max:95},{id:"C",min:96,max:97}],
   stripes:[
     {id:"none",n:"Sin franjas",p:0,c:"0",ids:[]},
-    {id:"tricolor",n:"Azul, blanco y rojo",d:"Sobre base Negra o Gris Acero",p:350,c:"TR",ids:["azul","blanco","rojo"],bases:["negro","acero"]},
+    {id:"tricolor",n:"Azul, blanco y rojo",p:350,c:"TR",ids:["azul","blanco","rojo"]},
     // amarillo: en PETG solo hay Grilon3 Clear Amarillo (translúcido, M77IAM175CJ)
-    {id:"amarillonegro",n:"Amarillo y negro",d:"Sobre base Negra, Blanca o Gris Acero",p:350,c:"AN",ids:["amarillo","negro","amarillo"],bases:["negro","blanco","acero"]}
+    {id:"amarillonegro",n:"Amarillo y negro",p:350,c:"AN",ids:["amarillo","negro","amarillo"]}
   ],
   extras:[
     {id:"patitas",n:"Patitas antideslizantes",d:"6 patitas de goma para que no se mueva en el piso del auto",p:120,c:"PA"},
@@ -502,7 +506,7 @@ CAT.stripes.forEach(st=>{st.cols=st.ids.map(id=>CAT.colors[id].hex);});
 
 /* ======= Estado (ejemplo inicial) ======= */
 const S = {baseColor:"negro",handleType:"larga",pattern:"estrias",handleColor:"bronce",
-  plate:"texto",plateText:"MARCELO",plateColor:"blanco",stripes:"none",extras:new Set(),termoT:"B",aroD:70};
+  plate:"texto",plateText:"MARCELO",plateColor:"blanco",plateInk:"negro",plateInkAuto:true,stripes:"none",extras:new Set(),termoT:"B",aroD:70};
 
 const $ = id => document.getElementById(id);
 const fmt = n => "$ " + n.toLocaleString("es-UY");
@@ -577,6 +581,7 @@ function extrasGroup(el){
 swatchGroup($("g-baseColor"),"baseColor",CAT.baseColors);
 swatchGroup($("g-handleColor"),"handleColor",CAT.handleColors);
 swatchGroup($("g-plateColor"),"plateColor",CAT.plateColors);
+swatchGroup($("g-plateInk"),"plateInk",CAT.plateColors);
 cardGroup($("g-handleType"),"handleType",CAT.handleType,miniHandle);
 cardGroup($("g-pattern"),"pattern",CAT.pattern,miniPattern);
 cardGroup($("g-plate"),"plate",CAT.plate);
@@ -585,6 +590,7 @@ extrasGroup($("g-extras"));
 
 function syncInputs(){
   ["baseColor","handleColor","plateColor","handleType","pattern","plate","stripes"].forEach(k=>{const i=$(k+"-"+S[k]); if(i) i.checked=true;});
+  { const i=$("plateInk-"+plateInkId()); if(i) i.checked=true; }
   CAT.extras.forEach(o=>$("extra-"+o.id).checked=S.extras.has(o.id));
   $("plateText").value=S.plateText;
   $("termoT").value=S.termoT; $("aroD").value=S.aroD;
@@ -597,7 +603,10 @@ function handleColorCost(){
   return CAT.handleColorPrice[CAT.colors[S.handleColor].tier];
 }
 const cName=id=>CAT.colors[id].n+" ("+CAT.colors[id].c+")";
-function plateInkHex(){return CAT.colors[CAT.plateInk[S.plateColor]||"negro"].hex;}
+// relieve: el que eligió el cliente, o el que más contrasta con la placa (negro o blanco)
+function plateInkId(){ if(!S.plateInkAuto&&S.plateInk!==S.plateColor&&CAT.plateColors.includes(S.plateInk)) return S.plateInk;
+  return isLight(CAT.colors[S.plateColor].hex)?"negro":"blanco"; }
+function plateInkHex(){return CAT.colors[plateInkId()].hex;}
 // franja con una base que no corresponde: devuelve las bases permitidas
 const MAX_BASE_COLORS = 4;   // lugares del AMS de la Bambu A1
 const basePrintColors=(base,st)=>[...new Set([base,...((st&&st.ids)||[])])];
@@ -613,14 +622,14 @@ function compute(){
   L.push({n:"Color de manija",s:cName(S.handleColor)+(S.handleColor===S.baseColor?", igual a la base":""),p:hc});
   {
     const txt=S.plate==="texto"?`“${(S.plateText||"").trim()||"—"}”`:"MiMatera3D";
-    L.push({n:S.plate==="texto"?"Placa: "+pl.n:pl.n,s:txt+" en "+cName(S.plateColor)+", relieve "+CAT.colors[CAT.plateInk[S.plateColor]].n.toLowerCase(),p:pl.p+plateColorCost()});
+    L.push({n:S.plate==="texto"?"Placa: "+pl.n:pl.n,s:txt+" en "+cName(S.plateColor)+", relieve "+cName(plateInkId()),p:pl.p+plateColorCost()});
   }
   if(S.stripes!=="none") L.push({n:"Franjas de color",s:st.n,p:st.p});
   const tz=CAT.termoSizes.find(t=>t.id===S.termoT)||CAT.termoSizes[1];
   const exSub={adaptador:"Talle "+tz.id+", para termos de "+tz.min+" a "+tz.max+" mm",aro:"Hueco de Ø "+S.aroD+" mm"};
   CAT.extras.forEach(o=>{if(S.extras.has(o.id)) L.push({n:o.n,s:exSub[o.id]||"",p:o.p});});
   const total=L.reduce((a,b)=>a+b.p,0);
-  const code="MT-"+[CAT.colors[S.baseColor].c, ht.c+pt.c, CAT.colors[S.handleColor].c, pl.c+CAT.colors[S.plateColor].c, st.c].join("·")
+  const code="MT-"+[CAT.colors[S.baseColor].c, ht.c+pt.c, CAT.colors[S.handleColor].c, pl.c+CAT.colors[S.plateColor].c+CAT.colors[plateInkId()].c, st.c].join("·")
     +(S.extras.size?"+"+CAT.extras.filter(o=>S.extras.has(o.id)).map(o=>o.c+(o.id==="adaptador"?S.termoT:o.id==="aro"?S.aroD:"")).join(""):"");
   return {L,total,code,ht,pt,pl,st};
 }
@@ -684,6 +693,7 @@ function render(){
   $("plateTextWrap").hidden=S.plate!=="texto";
   $("xsub-adaptador").hidden=!S.extras.has("adaptador");
   $("xsub-aro").hidden=!S.extras.has("aro");
+  CAT.plateColors.forEach(id=>{const i=$("plateInk-"+id); i.disabled=id===S.plateColor; i.checked=id===plateInkId();});
   // opciones que no entran en la impresión de la base (más de MAX_BASE_COLORS colores)
   CAT.baseColors.forEach(id=>{const i=$("baseColor-"+id); i.disabled=!fitsPrinter(id,S.stripes);
     i.parentElement.title=i.disabled?`Con esta franja la base usaría más de ${MAX_BASE_COLORS} colores`:"";});
@@ -714,6 +724,7 @@ function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 $("opts").addEventListener("change",e=>{
   const el=e.target;
   if(el.name==="extras"){el.checked?S.extras.add(el.value):S.extras.delete(el.value);}
+  else if(el.name==="plateInk"){S.plateInk=el.value; S.plateInkAuto=false;}
   else if(el.type==="radio"){S[el.name]=el.value;}
   else if(el.id==="termoT"){S.termoT=el.value;}
   else if(el.id==="aroD"){S.aroD=+el.value;}
@@ -761,6 +772,7 @@ try{const saved=JSON.parse(localStorage.getItem("matera-config")||"null");
     const OLD={grafito:"negro",hormigon:"plata",arena:"blanco",yerba:"plata",chocolate:"plata",hueso:"blanco",cobre:"bronce",oro:"bronce"};
     const fix=(v,list,def)=>{v=OLD[v]||v; return list.includes(v)?v:def;};
     S.baseColor=fix(S.baseColor,CAT.baseColors,"negro"); S.handleColor=fix(S.handleColor,CAT.handleColors,"bronce"); S.plateColor=fix(S.plateColor,CAT.plateColors,"blanco");
+    if(!CAT.plateColors.includes(S.plateInk)){S.plateInk="negro"; S.plateInkAuto=true;}
     if(!CAT.stripes.some(o=>o.id===S.stripes)) S.stripes={nacional:"tricolor",penarol:"amarillonegro",aurinegra:"amarillonegro"}[S.stripes]||"none";
     syncInputs();}}catch(e){}
 
@@ -916,7 +928,7 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     setF(); while(ctx.measureText(txt).width>MAXW&&size>minSize){size-=3; setF();}
     const w=ctx.measureText(txt).width;
     ctx.save(); ctx.translate(350,114); ctx.scale(Math.min(1,MAXW/w),1);
-    ctx.shadowColor=S.plateColor==="negro"?"rgba(0,0,0,.6)":"rgba(0,0,0,.35)"; ctx.shadowOffsetY=5; ctx.shadowBlur=5;
+    ctx.shadowColor=isLight(CAT.colors[S.plateColor].hex)?"rgba(0,0,0,.35)":"rgba(0,0,0,.6)"; ctx.shadowOffsetY=5; ctx.shadowBlur=5;
     ctx.fillText(txt,0,0); ctx.restore();
     plateTex.needsUpdate=true;
     plateSide.color.copy(lin(hex)); plateFront.color.set(0xffffff);
