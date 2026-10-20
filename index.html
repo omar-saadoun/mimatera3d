@@ -310,7 +310,7 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 
   <form class="opts" id="opts" onsubmit="return false">
     <fieldset>
-      <legend><span><span class="step">Base</span><h3>Color de la matera</h3></span><span class="delta">incluido</span></legend>
+      <legend><span><span class="step">Base</span><h3>Color de la matera</h3></span><span class="delta" id="d-baseColor"></span></legend>
       <div class="swatches" id="g-baseColor"></div>
       <div class="warn" id="baseWarn" hidden role="status"></div>
     </fieldset>
@@ -445,6 +445,8 @@ const WHATSAPP = "59899892175";
 const BRONCE_METALICO = true;   // confirmado: el Bronce 3n3 tiene brillo metálico
 const CAT = {
   base: 1490,
+  // recargo de la base según la marca del filamento (Grilon3 cuesta más por kilo que 3n3)
+  baseMarcaExtra:{Grilon3:50},
   // PETG con stock en Macrotec (filamentos.macrotec.com.uy, 20/10/2026): marca y SKU de cada color.
   // Nova, Azul, Bronce, Rojo y Gris Espacial no tienen tono oficial: se tomaron de la foto de cada rollo.
   // Todos los opacos se ofrecen para base y manija. La impresión de la base (base + franjas) usa como máximo
@@ -542,7 +544,7 @@ function swatchGroup(el,name,ids,priceFn){
   ids.forEach(id=>{
     const c=CAT.colors[id];
     const l=document.createElement("label");l.className="sw";
-    l.innerHTML=`<input type="radio" name="${name}" id="${name}-${id}" value="${id}"><span class="dot" style="background:${c.hex}"></span><small>${c.n}</small>${c.tier==="esp"?'<span class="esp">metálico</span>':""}`;
+    l.innerHTML=`<input type="radio" name="${name}" id="${name}-${id}" value="${id}"><span class="dot" style="background:${c.hex}"></span><small>${c.n}</small>${c.tier==="esp"?'<span class="esp">metálico</span>':""}${priceFn&&priceFn(id)?`<span class="esp">+${fmt(priceFn(id))}</span>`:""}`;
     el.appendChild(l);
   });
 }
@@ -577,7 +579,7 @@ function extrasGroup(el){
   });
 }
 
-swatchGroup($("g-baseColor"),"baseColor",CAT.baseColors);
+swatchGroup($("g-baseColor"),"baseColor",CAT.baseColors,id=>baseColorCost(id));
 swatchGroup($("g-handleColor"),"handleColor",CAT.handleColors);
 swatchGroup($("g-plateColor"),"plateColor",CAT.plateColors);
 swatchGroup($("g-plateInk"),"plateInk",CAT.plateColors);
@@ -597,6 +599,7 @@ function syncInputs(){
 syncInputs();
 
 /* ======= Precio ======= */
+function baseColorCost(id){return (CAT.baseMarcaExtra||{})[CAT.colors[id].marca]||0;}
 function handleColorCost(){
   if(S.handleColor===S.baseColor) return 0;
   return CAT.handleColorPrice[CAT.colors[S.handleColor].tier];
@@ -615,7 +618,8 @@ const baseList=ids=>{const n=ids.map(id=>CAT.colors[id].base); return n.length>1
 function plateColorCost(){return S.plate!=="marca" && CAT.colors[S.plateColor].tier==="esp" ? CAT.plateEspPrice : 0;}
 function compute(){
   const L=[]; const ht=byId(CAT.handleType,S.handleType), pt=byId(CAT.pattern,S.pattern), pl=byId(CAT.plate,S.plate), st=byId(CAT.stripes,S.stripes);
-  L.push({n:"Matera base",s:"Color "+cName(S.baseColor),p:CAT.base});
+  const bx=baseColorCost(S.baseColor);
+  L.push({n:"Matera base",s:"Color "+cName(S.baseColor)+(bx?", filamento "+CAT.colors[S.baseColor].marca+" +"+fmt(bx):""),p:CAT.base+bx});
   L.push({n:"Manija "+ht.n,s:"Textura "+pt.n.toLowerCase(),p:ht.p+pt.p});
   const hc=handleColorCost();
   L.push({n:"Color de manija",s:cName(S.handleColor)+(S.handleColor===S.baseColor?", igual a la base":""),p:hc});
@@ -685,6 +689,7 @@ function render(){
   $("d-handleType").textContent=plus(r.ht.p);
   $("d-pattern").textContent=plus(r.pt.p);
   $("d-handleColor").textContent=plus(handleColorCost());
+  $("d-baseColor").textContent=plus(baseColorCost(S.baseColor));
   $("d-plate").textContent=plus(r.pl.p+plateColorCost());
   $("d-stripes").textContent=plus(r.st.p);
   const ex=CAT.extras.filter(o=>S.extras.has(o.id)).reduce((a,o)=>a+o.p,0);
