@@ -124,6 +124,9 @@ legend .delta{font:600 13px/1 var(--mono);color:var(--warm);white-space:nowrap}
 .sw{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;width:68px;cursor:pointer;text-align:center}
 .sw input,.opt input{position:absolute;opacity:0;pointer-events:none}
 .sw span.dot{width:44px;height:44px;border-radius:50%;border:1px solid rgba(0,0,0,.18);box-shadow:inset 0 -6px 10px rgba(0,0,0,.18), inset 0 4px 6px rgba(255,255,255,.25);transition:transform .15s}
+.sw input:disabled ~ *{opacity:.35}
+.sw:has(input:disabled){cursor:not-allowed}
+.opt:has(input:disabled){cursor:not-allowed;opacity:.5}
 .sw input:checked + span.dot{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink), inset 0 -6px 10px rgba(0,0,0,.18)}
 .sw small{font-size:12px;line-height:1.2;color:var(--muted)}
 .sw input:checked ~ small{color:var(--ink);font-weight:600}
@@ -439,19 +442,26 @@ const BRONCE_METALICO = false;
 const CAT = {
   base: 1490,
   // PETG con stock en Macrotec (filamentos.macrotec.com.uy, 20/10/2026): marca y SKU de cada color.
-  // Bases = los 4 del AMS de la Bambu A1, todos Grilon3; acentos para manija y placa.
+  // Todos los opacos se ofrecen para base y manija. La impresión de la base (base + franjas) usa como máximo
+  // MAX_BASE_COLORS colores, los lugares del AMS de la Bambu A1.
   colors: {
     negro:{n:"Negro",hex:"#2D2926",tier:"std",c:"NE",base:"Negra",marca:"Grilon3",sku:"M77ING175CJ"},
     acero:{n:"Gris Acero",hex:"#333F48",tier:"std",c:"GA",base:"Gris Acero",marca:"Grilon3",sku:"M77IGA175CJ"},
     plata:{n:"Gris Plata",hex:"#63666A",tier:"std",c:"GP",base:"Gris Plata",marca:"Grilon3",sku:"M77IGR175CJ"},
+    espacial:{n:"Gris Espacial",hex:"#AFB3B4",tier:"std",c:"GE",base:"Gris Espacial",marca:"3n3",sku:"M88IGE175CJ"},
+    nova:{n:"Nova",hex:"#D8DCE6",tier:"std",c:"NV",base:"Nova",marca:"Grilon3",sku:"M77INV175CJ"},
     blanco:{n:"Blanco",hex:"#F4F5F0",tier:"std",c:"BL",base:"Blanca",marca:"Grilon3",sku:"M77IBL175CJ"},
-    rojo:{n:"Rojo",hex:"#DF281F",tier:"std",c:"RO",marca:"3n3",sku:"M88IRJ175CJ"},
-    azul:{n:"Azul",hex:"#3871C1",tier:"std",c:"AZ",marca:"3n3",sku:"M88IAZ175CJ"},
-    naranja:{n:"Naranja Praga",hex:"#FE5000",tier:"std",c:"NA",marca:"Grilon3",sku:"M77INP175CJ"},
-    bronce:{n:"Bronce",hex:"#C58A3F",tier:BRONCE_METALICO?"esp":"std",c:"BR",marca:"3n3",sku:"M88IBR175CJ"}
+    rojo:{n:"Rojo",hex:"#DF281F",tier:"std",c:"RO",base:"Roja",marca:"3n3",sku:"M88IRJ175CJ"},
+    naranja:{n:"Naranja Praga",hex:"#FE5000",tier:"std",c:"NA",base:"Naranja Praga",marca:"Grilon3",sku:"M77INP175CJ"},
+    bronce:{n:"Bronce",hex:"#C58A3F",tier:BRONCE_METALICO?"esp":"std",c:"BR",base:"Bronce",marca:"3n3",sku:"M88IBR175CJ"},
+    verde:{n:"Verde Lima",hex:"#6AB753",tier:"std",c:"VL",base:"Verde Lima",marca:"3n3 EPET",sku:"M87IVL175CJ"},
+    azul:{n:"Azul",hex:"#3871C1",tier:"std",c:"AZ",base:"Azul",marca:"3n3",sku:"M88IAZ175CJ"},
+    traful:{n:"Azul Traful",hex:"#0974C8",tier:"std",c:"TF",base:"Azul Traful",marca:"3n3 EPET",sku:"M87IAT175CJ"},
+    // solo para franjas: translúcido
+    amarillo:{n:"Clear Amarillo",hex:"#FBE122",tier:"std",c:"CA",marca:"Grilon3",sku:"M77IAM175CJ"}
   },
-  baseColors:["negro","acero","plata","blanco"],
-  handleColors:["negro","acero","plata","blanco","rojo","azul","naranja","bronce"],
+  baseColors:["negro","acero","plata","espacial","nova","blanco","rojo","naranja","bronce","verde","azul","traful"],
+  handleColors:["negro","acero","plata","espacial","nova","blanco","rojo","naranja","bronce","verde","azul","traful"],
   handleColorPrice:{same:0,std:80,esp:180},
   handleType:[
     {id:"clasica",n:"Clásica",d:"La actual, con agarre recto",p:0,c:"CL"},
@@ -474,10 +484,10 @@ const CAT = {
   plateEspPrice:100,
   termoSizes:[{id:"A",min:90,max:92},{id:"B",min:93,max:95},{id:"C",min:96,max:97}],
   stripes:[
-    {id:"none",n:"Sin franjas",p:0,c:"0",cols:[]},
-    {id:"tricolor",n:"Azul, blanco y rojo",d:"Sobre base Negra o Gris Acero",p:350,c:"TR",cols:["#3871C1","#F4F5F0","#DF281F"],bases:["negro","acero"]},
+    {id:"none",n:"Sin franjas",p:0,c:"0",ids:[]},
+    {id:"tricolor",n:"Azul, blanco y rojo",d:"Sobre base Negra o Gris Acero",p:350,c:"TR",ids:["azul","blanco","rojo"],bases:["negro","acero"]},
     // amarillo: en PETG solo hay Grilon3 Clear Amarillo (translúcido, M77IAM175CJ)
-    {id:"amarillonegro",n:"Amarillo y negro",d:"Sobre base Negra, Blanca o Gris Acero",p:350,c:"AN",cols:["#FBE122","#2D2926","#FBE122"],bases:["negro","blanco","acero"]}
+    {id:"amarillonegro",n:"Amarillo y negro",d:"Sobre base Negra, Blanca o Gris Acero",p:350,c:"AN",ids:["amarillo","negro","amarillo"],bases:["negro","blanco","acero"]}
   ],
   extras:[
     {id:"patitas",n:"Patitas antideslizantes",d:"6 patitas de goma para que no se mueva en el piso del auto",p:120,c:"PA"},
@@ -486,6 +496,9 @@ const CAT = {
     {id:"regalo",n:"Caja de regalo",d:"Con tarjeta escrita a mano",p:200,c:"CR"}
   ]
 };
+
+// tonos de cada franja, tomados de los colores del catálogo
+CAT.stripes.forEach(st=>{st.cols=st.ids.map(id=>CAT.colors[id].hex);});
 
 /* ======= Estado (ejemplo inicial) ======= */
 const S = {baseColor:"negro",handleType:"larga",pattern:"estrias",handleColor:"bronce",
@@ -586,6 +599,9 @@ function handleColorCost(){
 const cName=id=>CAT.colors[id].n+" ("+CAT.colors[id].c+")";
 function plateInkHex(){return CAT.colors[CAT.plateInk[S.plateColor]||"negro"].hex;}
 // franja con una base que no corresponde: devuelve las bases permitidas
+const MAX_BASE_COLORS = 4;   // lugares del AMS de la Bambu A1
+const basePrintColors=(base,st)=>[...new Set([base,...((st&&st.ids)||[])])];
+const fitsPrinter=(base,stId)=>basePrintColors(base,byId(CAT.stripes,stId)).length<=MAX_BASE_COLORS;
 function stripeConflict(){const st=byId(CAT.stripes,S.stripes); return st&&st.bases&&!st.bases.includes(S.baseColor)?st:null;}
 const baseList=ids=>{const n=ids.map(id=>CAT.colors[id].base); return n.length>1?n.slice(0,-1).join(", ")+" o "+n[n.length-1]:n[0];};
 function plateColorCost(){return S.plate!=="marca" && CAT.colors[S.plateColor].tier==="esp" ? CAT.plateEspPrice : 0;}
@@ -668,6 +684,11 @@ function render(){
   $("plateTextWrap").hidden=S.plate!=="texto";
   $("xsub-adaptador").hidden=!S.extras.has("adaptador");
   $("xsub-aro").hidden=!S.extras.has("aro");
+  // opciones que no entran en la impresión de la base (más de MAX_BASE_COLORS colores)
+  CAT.baseColors.forEach(id=>{const i=$("baseColor-"+id); i.disabled=!fitsPrinter(id,S.stripes);
+    i.parentElement.title=i.disabled?`Con esta franja la base usaría más de ${MAX_BASE_COLORS} colores`:"";});
+  CAT.stripes.forEach(st=>{const i=$("stripes-"+st.id); i.disabled=!fitsPrinter(S.baseColor,st.id);
+    i.closest(".opt").title=i.disabled?`Con esta base la impresión usaría más de ${MAX_BASE_COLORS} colores`:"";});
   // franja que no va con la base elegida: avisar y proponer las bases compatibles
   const bad=stripeConflict();
   ["stripeWarn","baseWarn"].forEach(id=>{const w=$(id); w.hidden=!bad;
