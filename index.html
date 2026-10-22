@@ -209,9 +209,12 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 
 /* barra fija en celular */
 .bar{display:none}
+.stepper{display:none}
+.next-hint{margin:10px 0 0;font-size:13px;line-height:1.45;color:var(--muted)}
+.ticket .actions .btn.primary{font-size:15px}
 @media (max-width:900px){
   .measure{grid-template-columns:1fr}
-  #medir,#contacto{scroll-margin-top:calc(min(44vh,92vw) + 16px)}
+  #medir,#contacto,#pedido{scroll-margin-top:calc(min(36vh,84vw) + 16px)}
   .contact{grid-template-columns:1fr}
   .crow{grid-template-columns:1fr}
   .intro{grid-template-columns:1fr;padding-block:24px 16px}
@@ -220,7 +223,29 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
   .stage{order:1}.opts{order:2}.ticket{order:3}
   .stage svg{max-height:none}
   .stage{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 10px 24px -14px rgba(0,0,0,.45)}
-  .stage.is3d{aspect-ratio:auto;height:min(44vh,92vw)}
+  .stage.is3d{aspect-ratio:auto;height:min(36vh,84vw)}
+  /* celular: paso a paso */
+  .stepper{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none;scroll-margin-top:calc(min(36vh,84vw) + 12px)}
+  .stepper::-webkit-scrollbar{display:none}
+  .stepper button{flex:none;appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:600 13px/1 var(--body);padding:9px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .stepper button .n{font:600 11px/1 var(--mono);width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;background:var(--bg);color:var(--muted)}
+  .stepper button[aria-current="step"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .stepper button[aria-current="step"] .n{background:var(--bg);color:var(--ink)}
+  .stepper button.done .n{background:var(--accent);color:var(--accent-ink)}
+  .stepper button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  body[data-step] .opts fieldset{display:none}
+  body[data-step="1"] .opts fieldset[data-step="1"],body[data-step="2"] .opts fieldset[data-step="2"],body[data-step="3"] .opts fieldset[data-step="3"],body[data-step="4"] .opts fieldset[data-step="4"]{display:block}
+  .ticket{display:none}
+  body[data-step="5"] .ticket{display:block}
+  body[data-step="5"] .ticket .actions{flex-direction:column}
+  body[data-step="5"] .ticket .actions .btn{width:100%;justify-content:center}
+  body[data-step="5"] .ticket .actions .btn.primary{padding:16px;font-size:16px}
+  .bar-act{display:flex;gap:8px;align-items:center}
+  .bar>div:first-child{flex:none}
+  .bar .amt{white-space:nowrap}
+  .bar .btn{padding:13px 16px;white-space:nowrap}
+  .bar .btn.back{width:46px;height:46px;padding:0;justify-content:center;font-size:24px;line-height:1;border-radius:50%}
+  .bar #barNext{font-size:15px}
   body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
   .top nav{display:none}
   .steps,.faq{grid-template-columns:1fr}
@@ -299,9 +324,10 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
       <ul class="lines" id="lines"></ul>
       <div class="total"><span>Total</span><span class="amt" id="total">$ 0</span></div>
       <div class="actions">
-        <a class="btn primary" id="wa" href="#" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+        <a class="btn primary" id="wa" href="#" target="_blank" rel="noopener">Confirmar pedido por WhatsApp</a>
         <button class="btn" id="copy" type="button">Copiar pedido</button>
       </div>
+      <p class="next-hint">Se abre WhatsApp con tu pedido ya escrito. Lo enviás y te respondemos con el link de pago y la fecha de entrega.</p>
       <p class="wa-warn" id="waWarn" hidden></p>
       <p class="fine">Se imprime a pedido: 5 a 7 días hábiles. Retiro sin costo o envío a todo el país. Pagás con Mercado Pago o transferencia.</p>
       <details class="msg"><summary>Ver el mensaje que se envía</summary><pre id="msg"></pre></details>
@@ -433,9 +459,12 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 <footer><span>MiMatera3D · Montevideo, Uruguay</span><span class="mono">mimatera3d.com</span><span>© 2026 MiMatera3D. Todos los derechos reservados.</span></footer>
 </div>
 
-<div class="bar" aria-hidden="false">
-  <div><small>Total</small><span class="amt" id="barTotal">$ 0</span></div>
-  <a class="btn primary" href="#pedido">Ver pedido</a>
+<div class="bar">
+  <div><small id="barStep">Total</small><span class="amt" id="barTotal">$ 0</span></div>
+  <div class="bar-act">
+    <button class="btn back" type="button" id="barBack" aria-label="Paso anterior" hidden>‹</button>
+    <a class="btn primary" id="barNext" href="#pedido" rel="noopener">Siguiente</a>
+  </div>
 </div>
 
 <script>
@@ -718,7 +747,7 @@ function render(){
   const wa=$("wa");
   if(bad){ wa.removeAttribute("href"); wa.setAttribute("aria-disabled","true"); wa.textContent="Elegí una base compatible";
     $("waWarn").hidden=false; $("waWarn").textContent=`La franja ${bad.n.toLowerCase()} va sobre base ${baseList(bad.bases)}.`; }
-  else{ wa.href="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(msg); wa.removeAttribute("aria-disabled"); wa.textContent="Pedir por WhatsApp"; $("waWarn").hidden=true; }
+  else{ wa.href="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(msg); wa.removeAttribute("aria-disabled"); wa.textContent="Confirmar pedido por WhatsApp"; $("waWarn").hidden=true; }
   drawPreview(r);
   if(window.mat3d) window.mat3d.update(r);
   try{localStorage.setItem("matera-config",JSON.stringify({...S,extras:[...S.extras]}));}catch(e){}
@@ -748,6 +777,38 @@ $("copy").addEventListener("click",()=>{
   const fallback=()=>{const d=b.closest(".ticket").querySelector("details.msg");d.open=true;const r=document.createRange();r.selectNodeContents($("msg"));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Seleccionado: copialo";};
   try{navigator.clipboard.writeText(txt).then(done,fallback);}catch(e){fallback();}
 });
+
+// ---------- Celular: el configurador va paso a paso ----------
+const STEPS=[{n:"Base",cam:"mano"},{n:"Manija",cam:"manija"},{n:"Placa",cam:"placa"},{n:"Extras",cam:"mano"},{n:"Confirmar",cam:"mano"}];
+const mobile=matchMedia("(max-width:900px)");
+let step=1, seen=1;
+{ const where={"g-baseColor":1,"g-stripes":1,"g-handleType":2,"g-pattern":2,"g-handleColor":2,"g-plate":3,"g-extras":4};
+  $("opts").querySelectorAll("fieldset").forEach(f=>{for(const k in where) if(f.querySelector("#"+k)) f.dataset.step=where[k];});
+  const nav=document.createElement("nav"); nav.className="stepper"; nav.id="stepper"; nav.setAttribute("aria-label","Pasos del pedido");
+  nav.innerHTML=STEPS.map((s,i)=>`<button type="button" data-goto="${i+1}"><span class="n">${i+1}</span>${s.n}</button>`).join("");
+  $("opts").prepend(nav); }
+function setStep(n,scroll){
+  step=Math.max(1,Math.min(STEPS.length,n)); seen=Math.max(seen,step);
+  document.body.dataset.step=step;
+  document.querySelectorAll("#stepper button").forEach((b,i)=>{ if(i+1===step) b.setAttribute("aria-current","step"); else b.removeAttribute("aria-current"); b.classList.toggle("done",i+1<step); });
+  const cur=document.querySelector("#stepper [aria-current]"); if(cur) cur.scrollIntoView({block:"nearest",inline:"center"});
+  $("barStep").textContent=`Paso ${step} de ${STEPS.length}`;
+  $("barBack").hidden=step===1;
+  const nx=$("barNext");
+  if(step<STEPS.length){ nx.textContent=step===STEPS.length-1?"Revisar pedido":"Siguiente: "+STEPS[step].n; nx.href="#"; nx.removeAttribute("target"); }
+  else{ nx.textContent="Confirmar pedido"; nx.href=$("wa").href||"#"; nx.target="_blank"; }
+  if(mobile.matches&&window.mat3d&&window.mat3d.focus&&STEPS[step-1].cam) window.mat3d.focus(STEPS[step-1].cam);
+  if(scroll){ const y=$("stepper").getBoundingClientRect().top+scrollY-document.querySelector(".stage").offsetHeight-12;
+    window.scrollTo({top:Math.max(0,y),behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"}); }
+}
+$("stepper").addEventListener("click",e=>{const b=e.target.closest("[data-goto]"); if(b) setStep(+b.dataset.goto,true);});
+$("barBack").addEventListener("click",()=>setStep(step-1,true));
+$("barNext").addEventListener("click",e=>{
+  if(step<STEPS.length){ e.preventDefault(); setStep(step+1,true); return; }
+  if($("wa").getAttribute("aria-disabled")==="true"){ e.preventDefault(); return; }
+  e.currentTarget.href=$("wa").href;   // el mensaje siempre con la última configuración
+});
+setStep(1,false);
 
 // calculadora de talle del adaptador
 function termoFit(d){
@@ -1113,7 +1174,8 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     if(tm) tm.scale.set(ts,1,ts); if(mm) mm.scale.set(ms,ms,ms); if(ym){ym.scale.set(ms,ms,1); ym.position.y=86*ms;}
     cols.forEach((c,i)=>stripeMats[i].color.copy(lin(c)));
   }
-  window.mat3d={update};
+  Object.assign(views,{manija:{p:new THREE.Vector3(-430,440,470),t:new THREE.Vector3(-10,125,20)},placa:{p:new THREE.Vector3(-130,150,500),t:new THREE.Vector3(0,45,60)}});
+  window.mat3d={update, focus:k=>{ if(mode!=="mano") setMode("mano"); if(views[k]) camTo(views[k]); }};
 
   /* --- Carga de las piezas --- */
   const get=u=>fetch(u).then(r=>{if(!r.ok) throw new Error(u); return r.text();});
