@@ -567,9 +567,9 @@ const CAT = {
   ],
   extras:[
     {id:"patitas",n:"Patitas antideslizantes",d:"6 patitas de goma para que no se mueva en el piso del auto",p:120,c:"PA"},
-    {id:"adaptador",n:"Adaptador de termo",d:"Funda en 3 talles para termos de 90 a 97 mm de diámetro",p:190,c:"AT"},
+    {id:"adaptador",n:"Adaptador de termo",d:"Funda en 3 talles para termos de 90 a 97 mm de diámetro",p:390,c:"AT"},   // 90 a 154 g y 3 a 6 h de impresora: a $190 el talle A perdía plata
     {id:"aro",n:"Aro para mate chico",d:"Achica el hueco del mate de 86 mm a 65, 70 o 75 mm",p:120,c:"AM"},
-    {id:"regalo",n:"Caja de regalo",d:"Con tarjeta escrita a mano",p:200,c:"CR"}
+    {id:"regalo",n:"Caja de regalo",d:"Con tarjeta escrita a mano",p:200,c:"CR",soon:true}   // soon: se muestra como "Próximamente" y no se puede elegir
   ]
 };
 
@@ -659,7 +659,7 @@ function extrasGroup(el){
   el.innerHTML="";
   CAT.extras.forEach(o=>{
     const l=document.createElement("label");l.className="opt";
-    l.innerHTML=`<input type="checkbox" name="extras" id="extra-${o.id}" value="${o.id}"><span><span class="box"><svg viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-7" stroke="var(--accent-ink)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="txt"><b>${o.n}</b><small>${o.d}</small></span><span class="p">+${fmt(o.p)}</span></span>`;
+    l.innerHTML=`<input type="checkbox" name="extras" id="extra-${o.id}" value="${o.id}"${o.soon?" disabled":""}><span><span class="box"><svg viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-7" stroke="var(--accent-ink)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="txt"><b>${o.n}</b><small>${o.d}</small></span><span class="p">${o.soon?"Próximamente":"+"+fmt(o.p)}</span></span>`;
     el.appendChild(l);
     if(o.id==="adaptador") el.insertAdjacentHTML("beforeend",`<div class="xsub" id="xsub-adaptador" hidden><label for="termoT">Talle según el diámetro de tu termo<select id="termoT">${CAT.termoSizes.map(t=>`<option value="${t.id}">Talle ${t.id} · termos de ${t.min} a ${t.max} mm</option>`).join("")}</select></label><a class="howto" href="#medir">¿Cómo mido mi termo?</a></div>`);
     if(o.id==="aro") el.insertAdjacentHTML("beforeend",`<div class="xsub" id="xsub-aro" hidden><label for="aroD">Hueco para tu mate<select id="aroD"><option value="65">Ø 65 mm</option><option value="70">Ø 70 mm</option><option value="75">Ø 75 mm</option></select></label><a class="howto" href="#medir">¿Cómo mido mi mate?</a></div>`);
@@ -929,7 +929,7 @@ $("useT").addEventListener("click",e=>{
 
 // recuperar la última configuración de este navegador
 try{const saved=JSON.parse(localStorage.getItem("matera-config")||"null");
-  if(saved){Object.assign(S,saved,{extras:new Set((saved.extras||[]).filter(id=>CAT.extras.some(o=>o.id===id))),termoT:CAT.termoSizes.some(t=>t.id===saved.termoT)?saved.termoT:"B",aroD:saved.aroD||70});
+  if(saved){Object.assign(S,saved,{extras:new Set((saved.extras||[]).filter(id=>CAT.extras.some(o=>o.id===id&&!o.soon))),termoT:CAT.termoSizes.some(t=>t.id===saved.termoT)?saved.termoT:"B",aroD:saved.aroD||70});
     if(!CAT.models.some(o=>o.id===S.model)) S.model="basica";
     if(!CAT.premium.finish.some(o=>o.id===S.pFinish)) S.pFinish="lisa";
     if(!CAT.premium.end.some(o=>o.id===S.pEnd)) S.pEnd="porta";
