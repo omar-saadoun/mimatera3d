@@ -152,6 +152,9 @@ legend .delta{font:600 13px/1 var(--mono);color:var(--warm);white-space:nowrap}
 .extras .txt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .extras .p{margin-top:0;padding-top:2px;align-self:flex-start}
 .cards.extras{grid-template-columns:1fr}
+.opts fieldset[hidden],.sub[hidden]{display:none!important}
+.cards.models .opt b{font-size:16px}
+.mini.model{height:46px}
 
 .sub{clear:both;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:12px}
 .sub label.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
@@ -234,12 +237,12 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
   .stepper button.done .n{background:var(--accent);color:var(--accent-ink)}
   .stepper button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   body[data-step] .opts fieldset{display:none}
-  body[data-step="1"] .opts fieldset[data-step="1"],body[data-step="2"] .opts fieldset[data-step="2"],body[data-step="3"] .opts fieldset[data-step="3"],body[data-step="4"] .opts fieldset[data-step="4"]{display:block}
+  body[data-step="1"] .opts fieldset[data-step="1"],body[data-step="2"] .opts fieldset[data-step="2"],body[data-step="3"] .opts fieldset[data-step="3"],body[data-step="4"] .opts fieldset[data-step="4"],body[data-step="5"] .opts fieldset[data-step="5"]{display:block}
   .ticket{display:none}
-  body[data-step="5"] .ticket{display:block}
-  body[data-step="5"] .ticket .actions{flex-direction:column}
-  body[data-step="5"] .ticket .actions .btn{width:100%;justify-content:center}
-  body[data-step="5"] .ticket .actions .btn.primary{padding:16px;font-size:16px}
+  body[data-step="6"] .ticket{display:block}
+  body[data-step="6"] .ticket .actions{flex-direction:column}
+  body[data-step="6"] .ticket .actions .btn{width:100%;justify-content:center}
+  body[data-step="6"] .ticket .actions .btn.primary{padding:16px;font-size:16px}
   .bar-act{display:flex;gap:8px;align-items:center}
   .bar>div:first-child{flex:none}
   .bar .amt{white-space:nowrap}
@@ -336,14 +339,34 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 
   <form class="opts" id="opts" onsubmit="return false">
     <fieldset>
+      <legend><span><span class="step">Modelo</span><h3>Elegí el modelo</h3></span><span class="delta" id="d-model"></span></legend>
+      <div class="cards models" id="g-model"></div>
+    </fieldset>
+
+    <fieldset class="only-p" hidden>
+      <legend><span><span class="step">Premium · paredes</span><h3>Acabado de la base</h3></span><span class="delta" id="d-pFinish"></span></legend>
+      <div class="cards" id="g-pFinish"></div>
+    </fieldset>
+
+    <fieldset class="only-p" hidden>
+      <legend><span><span class="step">Premium · extremo</span><h3>Porta celular o tapa</h3></span><span class="delta" id="d-pEnd"></span></legend>
+      <p class="hint">Entra deslizando en el extremo del mate y lo podés cambiar cuando quieras.</p>
+      <div class="cards" id="g-pEnd"></div>
+    </fieldset>
+
+    <fieldset>
       <legend><span><span class="step">Base</span><h3>Color de la matera</h3></span><span class="delta" id="d-baseColor"></span></legend>
       <div class="swatches" id="g-baseColor"></div>
       <div class="warn" id="baseWarn" hidden role="status"></div>
+      <div class="sub only-p" id="modSub" hidden>
+        <div style="font-size:13px;color:var(--muted)" id="modLabel">Color del porta celular</div>
+        <div class="swatches" id="g-moduleColor"></div>
+      </div>
     </fieldset>
 
     <fieldset>
       <legend><span><span class="step">Manija · forma</span><h3>Tipo de manija</h3></span><span class="delta" id="d-handleType"></span></legend>
-      <p class="hint">Todas encastran a presión en el tabique central y se sacan apretando los botones.</p>
+      <p class="hint" id="htHint">Todas encastran a presión en el tabique central y se sacan apretando los botones.</p>
       <div class="cards" id="g-handleType"></div>
     </fieldset>
 
@@ -361,10 +384,10 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 
     <fieldset>
       <legend><span><span class="step">Frente</span><h3>Placa del frente</h3></span><span class="delta" id="d-plate"></span></legend>
-      <p class="hint">Placa de 69 × 21 mm que se imprime aparte, con el relieve en otro color, y va pegada en el rebaje del frente. Sin cargo lleva nuestra marca.</p>
+      <p class="hint" id="plHint">Placa de 69 × 21 mm que se imprime aparte, con el relieve en otro color, y va pegada en el rebaje del frente. Sin cargo lleva nuestra marca.</p>
       <div class="cards" id="g-plate"></div>
       <div class="sub" id="plateSub">
-        <label class="field" id="plateTextWrap">Texto de la placa (hasta 10 caracteres, en mayúsculas y en relieve)
+        <label class="field" id="plateTextWrap"><span id="plTextLbl">Texto de la placa (hasta 10 caracteres, en mayúsculas y en relieve)</span>
           <input type="text" id="plateText" maxlength="10" value="MARCELO" autocomplete="off">
         </label>
         <div>
@@ -426,9 +449,10 @@ footer{padding-block:28px 96px;color:var(--muted);font-size:13px;display:flex;fl
 <section class="band" id="preguntas">
   <h2>Preguntas</h2>
   <div class="faq">
+    <details><summary>¿Qué diferencia hay entre la Básica y la Premium?</summary><p>La Básica tiene una manija que se saca y se encastra atrás para usarla en el auto, y una placa de 69 × 21 mm. La Premium tiene paredes curvas (lisas o acanaladas), un porta celular que entra en el extremo, una manija que se abre tirando hacia arriba, una lengüeta que sale 60 mm por atrás para trabar en el asiento y una placa grande de 108 × 34 mm. Las dos llevan el mismo termo y el mismo mate.</p></details>
     <details><summary>¿Qué termo entra?</summary><p>Está hecha para el Stanley 1,2 L (Ø 102 mm), con ranura para el asa. Para termos de 90 a 97 mm de diámetro sumá el adaptador. Si tu termo tiene otra medida, <a class="howto" href="#contacto" data-contact="termo">pedinos un adaptador a medida</a>.</p></details>
     <details><summary>¿Aguanta el sol del auto?</summary><p>Sí. Usamos PETG, que no se deforma con el calor de un auto al sol como el PLA.</p></details>
-    <details><summary>¿Cómo se usa en el auto?</summary><p>Sacás la manija de arriba y la encastrás atrás, a ras del piso. Queda horizontal y se mete entre el respaldo y el asiento del acompañante.</p></details>
+    <details><summary>¿Cómo se usa en el auto?</summary><p>En la Básica sacás la manija de arriba y la encastrás atrás, a ras del piso: queda horizontal y se mete entre el respaldo y el asiento del acompañante. En la Premium bajás la manija y tirás de la lengüeta de atrás, que sale 60 mm y traba en el asiento.</p></details>
     <details><summary>¿Puedo cambiar la manija después?</summary><p>Sí. La manija encastra a presión, así que podés comprar otra forma o color y cambiarla en segundos.</p></details>
   </div>
 </section>
@@ -474,6 +498,24 @@ const WHATSAPP = "59892371665";
 const BRONCE_METALICO = true;   // confirmado: el Bronce 3n3 tiene brillo metálico
 const CAT = {
   base: 1490,
+  // modelos: la Básica es la de siempre; la Premium tiene paredes curvas, porta celular y manija y lengüeta retráctiles
+  models:[
+    {id:"basica",n:"Básica",d:"Manija que se saca y se encastra atrás para el auto. Placa de 69 × 21 mm.",p:1490,c:"B"},
+    {id:"premium",n:"Premium",d:"Paredes curvas, porta celular, manija y lengüeta retráctiles y placa grande.",p:2790,c:"P"}
+  ],
+  premium:{
+    baseMarcaExtra:{Grilon3:100},   // base + módulo + lengüeta: unos 660 g en el color de la base
+    finish:[{id:"lisa",n:"Lisa",d:"Paredes curvas, sin textura",p:0,c:"L"},
+            {id:"acanalada",n:"Acanalada",d:"Estrías verticales de 2,5 mm en los costados",p:190,c:"A"}],
+    end:[{id:"porta",n:"Porta celular",d:"Teléfono parado de hasta 80 × 17 mm con funda, con salida para el cable",p:0,c:"PC"},
+         {id:"tapa",n:"Tapa",d:"Cierra el extremo si no usás el celular",p:0,c:"TP"}],
+    handleType:[{id:"clasica",n:"Clásica",d:"Agarre recto de 24 mm. Se abre tirando hacia arriba",p:0,c:"CL"},
+                {id:"ergo",n:"Ergonómica",d:"Agarre de 28 mm con huecos para 4 dedos",p:290,c:"ER"}],
+    plate:[{id:"marca",n:"Placa MiMatera3D",d:"Nuestra marca en relieve",p:0,c:"M"},
+           {id:"texto",n:"Nombre o frase",d:"Hasta 14 caracteres en relieve",p:290,c:"T"},
+           {id:"metal",n:"Nombre estilo metal",d:"Letras angulosas con marco y remaches, hasta 12 caracteres",p:390,c:"X"}],
+    plateMax:{texto:14,metal:12}
+  },
   // recargo de la base según la marca del filamento (Grilon3 cuesta más por kilo que 3n3)
   baseMarcaExtra:{Grilon3:50},
   // PETG con stock en Macrotec (filamentos.macrotec.com.uy, 20/10/2026): marca y SKU de cada color.
@@ -535,13 +577,23 @@ const CAT = {
 CAT.stripes.forEach(st=>{st.cols=st.ids.map(id=>CAT.colors[id].hex);});
 
 /* ======= Estado (ejemplo inicial) ======= */
-const S = {baseColor:"negro",handleType:"larga",pattern:"estrias",handleColor:"bronce",
+const S = {model:"basica",pFinish:"lisa",pEnd:"porta",moduleColor:"negro",moduleAuto:true,
+  baseColor:"negro",handleType:"larga",pattern:"estrias",handleColor:"bronce",
   plate:"texto",plateText:"MARCELO",plateColor:"blanco",plateInk:"negro",plateInkAuto:true,stripes:"none",extras:new Set(),termoT:"B",aroD:70};
 
 const $ = id => document.getElementById(id);
 const fmt = n => "$ " + n.toLocaleString("es-UY");
 const plus = n => n ? "+" + fmt(n) : "incluido";
 const byId = (arr,id) => arr.find(o=>o.id===id);
+
+/* ======= Modelo elegido ======= */
+const isP=()=>S.model==="premium";
+const MODEL=()=>byId(CAT.models,S.model)||CAT.models[0];
+const HTYPES=()=>isP()?CAT.premium.handleType:CAT.handleType;
+const PLATES=()=>isP()?CAT.premium.plate:CAT.plate;
+const hasText=()=>S.plate==="texto"||S.plate==="metal";
+const plateMax=()=>isP()?(CAT.premium.plateMax[S.plate]||14):10;
+const modColorId=()=>S.moduleAuto?S.baseColor:S.moduleColor;
 
 /* ======= Color helpers ======= */
 function hexToRgb(h){h=h.replace("#","");return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16));}
@@ -597,6 +649,12 @@ function miniStripes(o){
   if(!o.cols.length) return `<svg class="mini" viewBox="0 0 100 40" aria-hidden="true"><rect x="0" y="4" width="100" height="32" rx="6" fill="${ink}" opacity=".18"/></svg>`;
   return `<svg class="mini" viewBox="0 0 100 40" aria-hidden="true"><rect x="0" y="4" width="100" height="32" rx="6" fill="${ink}" opacity=".18"/>${o.cols.map((c,i)=>`<rect x="0" y="${12+i*6}" width="100" height="6" fill="${c}"/>`).join("")}</svg>`;
 }
+function miniModel(o){
+  const d=o.id==="premium"
+    ?"M8 44V22Q8 14 16 13L44 11Q50 10 52 16L54 22H70V12Q70 6 76 6H86Q92 6 92 12V44Z"
+    :"M6 44V16H40V6Q40 2 44 2H58Q62 2 62 6V16H94V44Z";
+  return `<svg class="mini model" viewBox="0 0 100 46" aria-hidden="true"><path d="${d}" fill="${ink}" opacity=".85"/></svg>`;
+}
 function extrasGroup(el){
   el.innerHTML="";
   CAT.extras.forEach(o=>{
@@ -608,18 +666,31 @@ function extrasGroup(el){
   });
 }
 
+cardGroup($("g-model"),"model",CAT.models,miniModel);
+cardGroup($("g-pFinish"),"pFinish",CAT.premium.finish);
+cardGroup($("g-pEnd"),"pEnd",CAT.premium.end);
+swatchGroup($("g-moduleColor"),"moduleColor",CAT.baseColors);
 swatchGroup($("g-baseColor"),"baseColor",CAT.baseColors,id=>baseColorCost(id));
 swatchGroup($("g-handleColor"),"handleColor",CAT.handleColors);
 swatchGroup($("g-plateColor"),"plateColor",CAT.plateColors);
 swatchGroup($("g-plateInk"),"plateInk",CAT.plateColors);
-cardGroup($("g-handleType"),"handleType",CAT.handleType,miniHandle);
+cardGroup($("g-handleType"),"handleType",HTYPES(),miniHandle);
 cardGroup($("g-pattern"),"pattern",CAT.pattern,miniPattern);
-cardGroup($("g-plate"),"plate",CAT.plate);
+cardGroup($("g-plate"),"plate",PLATES());
+// al cambiar de modelo: opciones de manija y placa del modelo, y recargo Grilon3 de su base
+function rebuildModel(){
+  if(!HTYPES().some(o=>o.id===S.handleType)) S.handleType="clasica";
+  if(!PLATES().some(o=>o.id===S.plate)) S.plate="texto";
+  cardGroup($("g-handleType"),"handleType",HTYPES(),miniHandle);
+  cardGroup($("g-plate"),"plate",PLATES());
+  swatchGroup($("g-baseColor"),"baseColor",CAT.baseColors,id=>baseColorCost(id));
+}
 cardGroup($("g-stripes"),"stripes",CAT.stripes,miniStripes);
 extrasGroup($("g-extras"));
 
 function syncInputs(){
-  ["baseColor","handleColor","plateColor","handleType","pattern","plate","stripes"].forEach(k=>{const i=$(k+"-"+S[k]); if(i) i.checked=true;});
+  ["model","pFinish","pEnd","baseColor","handleColor","plateColor","handleType","pattern","plate","stripes"].forEach(k=>{const i=$(k+"-"+S[k]); if(i) i.checked=true;});
+  { const i=$("moduleColor-"+modColorId()); if(i) i.checked=true; }
   { const i=$("plateInk-"+plateInkId()); if(i) i.checked=true; }
   CAT.extras.forEach(o=>$("extra-"+o.id).checked=S.extras.has(o.id));
   $("plateText").value=S.plateText;
@@ -628,7 +699,8 @@ function syncInputs(){
 syncInputs();
 
 /* ======= Precio ======= */
-function baseColorCost(id){return (CAT.baseMarcaExtra||{})[CAT.colors[id].marca]||0;}
+function baseColorCost(id){return ((isP()?CAT.premium.baseMarcaExtra:CAT.baseMarcaExtra)||{})[CAT.colors[id].marca]||0;}
+function moduleColorCost(){const id=modColorId(); return id===S.baseColor?0:CAT.handleColorPrice[CAT.colors[id].tier];}
 function handleColorCost(){
   if(S.handleColor===S.baseColor) return 0;
   return CAT.handleColorPrice[CAT.colors[S.handleColor].tier];
@@ -646,22 +718,30 @@ function stripeConflict(){const st=byId(CAT.stripes,S.stripes); return st&&st.ba
 const baseList=ids=>{const n=ids.map(id=>CAT.colors[id].base); return n.length>1?n.slice(0,-1).join(", ")+" o "+n[n.length-1]:n[0];};
 function plateColorCost(){return S.plate!=="marca" && CAT.colors[S.plateColor].tier==="esp" ? CAT.plateEspPrice : 0;}
 function compute(){
-  const L=[]; const ht=byId(CAT.handleType,S.handleType), pt=byId(CAT.pattern,S.pattern), pl=byId(CAT.plate,S.plate), st=byId(CAT.stripes,S.stripes);
+  const L=[], P=isP(), md=MODEL();
+  const ht=byId(HTYPES(),S.handleType)||HTYPES()[0], pt=byId(CAT.pattern,S.pattern), pl=byId(PLATES(),S.plate)||PLATES()[0], st=byId(CAT.stripes,S.stripes);
+  const fin=byId(CAT.premium.finish,S.pFinish)||CAT.premium.finish[0], end=byId(CAT.premium.end,S.pEnd)||CAT.premium.end[0];
   const bx=baseColorCost(S.baseColor);
-  L.push({n:"Matera base",s:"Color "+cName(S.baseColor)+(bx?", filamento "+CAT.colors[S.baseColor].marca+" +"+fmt(bx):""),p:CAT.base+bx});
-  L.push({n:"Manija "+ht.n,s:"Textura "+pt.n.toLowerCase(),p:ht.p+pt.p});
+  L.push({n:"Matera "+md.n,s:(P?"Base "+fin.n.toLowerCase()+", color ":"Color ")+cName(S.baseColor)+(bx?", filamento "+CAT.colors[S.baseColor].marca+" +"+fmt(bx):""),p:md.p+bx});
+  if(P){
+    if(fin.p) L.push({n:"Paredes acanaladas",s:fin.d,p:fin.p});
+    const mc=modColorId();
+    L.push({n:end.n,s:"Color "+cName(mc)+(mc===S.baseColor?", igual a la base":""),p:end.p+moduleColorCost()});
+    L.push({n:"Lengüeta retráctil para el auto",s:"Sale 60 mm por atrás",p:0});
+  }
+  L.push({n:"Manija "+(P?"retráctil "+ht.n.toLowerCase():ht.n),s:"Textura "+pt.n.toLowerCase(),p:ht.p+pt.p});
   const hc=handleColorCost();
   L.push({n:"Color de manija",s:cName(S.handleColor)+(S.handleColor===S.baseColor?", igual a la base":""),p:hc});
   {
-    const txt=S.plate==="texto"?`“${(S.plateText||"").trim()||"—"}”`:"MiMatera3D";
-    L.push({n:S.plate==="texto"?"Placa: "+pl.n:pl.n,s:txt+" en "+cName(S.plateColor)+", relieve "+cName(plateInkId()),p:pl.p+plateColorCost()});
+    const txt=hasText()?`“${(S.plateText||"").trim()||"—"}”`:"MiMatera3D";
+    L.push({n:(P?"Placa grande":"Placa")+": "+pl.n.replace(/^Placa /,""),s:txt+" en "+cName(S.plateColor)+", relieve "+cName(plateInkId()),p:pl.p+plateColorCost()});
   }
   if(S.stripes!=="none") L.push({n:"Franjas de color",s:st.n,p:st.p});
   const tz=CAT.termoSizes.find(t=>t.id===S.termoT)||CAT.termoSizes[1];
   const exSub={adaptador:"Talle "+tz.id+", para termos de "+tz.min+" a "+tz.max+" mm",aro:"Hueco de Ø "+S.aroD+" mm"};
   CAT.extras.forEach(o=>{if(S.extras.has(o.id)) L.push({n:o.n,s:exSub[o.id]||"",p:o.p});});
   const total=L.reduce((a,b)=>a+b.p,0);
-  const code="MT-"+[CAT.colors[S.baseColor].c, ht.c+pt.c, CAT.colors[S.handleColor].c, pl.c+CAT.colors[S.plateColor].c+CAT.colors[plateInkId()].c, st.c].join("·")
+  const code=(P?"MP-":"MT-")+[CAT.colors[S.baseColor].c+(P?fin.c:""), ...(P?[end.c+CAT.colors[modColorId()].c]:[]), ht.c+pt.c, CAT.colors[S.handleColor].c, pl.c+CAT.colors[S.plateColor].c+CAT.colors[plateInkId()].c, st.c].join("·")
     +(S.extras.size?"+"+CAT.extras.filter(o=>S.extras.has(o.id)).map(o=>o.c+(o.id==="adaptador"?S.termoT:o.id==="aro"?S.aroD:"")).join(""):"");
   return {L,total,code,ht,pt,pl,st};
 }
@@ -690,7 +770,7 @@ function drawPreview(r){
   $("plate-face").setAttribute("fill",pc);
   const t=$("plate-txt");
   t.setAttribute("fill",plateInkHex());
-  if(S.plate==="texto"){t.textContent=(S.plateText||"").trim().toUpperCase()||"TU NOMBRE";t.setAttribute("font-size",t.textContent.length>7?"14":"17");}
+  if(hasText()){t.textContent=(S.plateText||"").trim().toUpperCase()||"TU NOMBRE";t.setAttribute("font-size",t.textContent.length>7?"14":"17");}
   else{t.textContent="MiMatera3D";t.setAttribute("font-size","14");}
 
   // manija
@@ -711,6 +791,17 @@ function drawPreview(r){
 
 /* ======= Ticket y mensaje ======= */
 function render(){
+  // textos y opciones que cambian con el modelo
+  const P=isP();
+  document.querySelectorAll(".only-p").forEach(el=>el.hidden=!P);
+  if(S.plate==="metal") S.plateText=(S.plateText||"").toUpperCase().normalize("NFD").replace(/N\u0303/g,"Ñ").replace(/[\u0300-\u036f]/g,"").replace(/[^A-ZÑ0-9 \-]/g,"");
+  S.plateText=(S.plateText||"").slice(0,plateMax());
+  { const t=$("plateText"); t.maxLength=plateMax(); if(t.value!==S.plateText) t.value=S.plateText; }
+  $("plTextLbl").textContent=`Texto de la placa (hasta ${plateMax()} caracteres, en mayúsculas y en relieve)`+(S.plate==="metal"?": letras, números, espacio y guion":"");
+  $("htHint").textContent=P?"Queda montada en la base: se abre tirando hacia arriba hasta el tope y se guarda bajándola.":"Todas encastran a presión en el tabique central y se sacan apretando los botones.";
+  $("plHint").textContent=P?"Placa grande de 108 × 34 mm que se imprime aparte, con el relieve en otro color, y va pegada en el panel del frente. Sin cargo lleva nuestra marca.":"Placa de 69 × 21 mm que se imprime aparte, con el relieve en otro color, y va pegada en el rebaje del frente. Sin cargo lleva nuestra marca.";
+  $("modLabel").textContent=`Color ${S.pEnd==="tapa"?"de la tapa":"del porta celular"}: igual a la base, incluido. Otro color: +${fmt(CAT.handleColorPrice.std)}.`;
+  { const sm=$("extra-patitas").closest("label").querySelector("small"); if(sm) sm.textContent=(P?"8":"6")+" patitas de goma para que no se mueva en el piso del auto"; }
   const r=compute();
   $("lines").innerHTML=r.L.map(l=>`<li><span>${l.n}${l.s?`<small>${esc(l.s)}</small>`:""}</span><span class="amt">${l===r.L[0]?fmt(l.p):plus(l.p)}</span></li>`).join("");
   $("total").textContent=fmt(r.total); $("barTotal").textContent=fmt(r.total);
@@ -718,12 +809,15 @@ function render(){
   $("d-handleType").textContent=plus(r.ht.p);
   $("d-pattern").textContent=plus(r.pt.p);
   $("d-handleColor").textContent=plus(handleColorCost());
-  $("d-baseColor").textContent=plus(baseColorCost(S.baseColor));
+  $("d-baseColor").textContent=plus(baseColorCost(S.baseColor)+(P?moduleColorCost():0));
+  $("d-model").textContent=fmt(MODEL().p);
+  $("d-pFinish").textContent=plus((byId(CAT.premium.finish,S.pFinish)||{p:0}).p);
+  $("d-pEnd").textContent=plus(moduleColorCost());
   $("d-plate").textContent=plus(r.pl.p+plateColorCost());
   $("d-stripes").textContent=plus(r.st.p);
   const ex=CAT.extras.filter(o=>S.extras.has(o.id)).reduce((a,o)=>a+o.p,0);
   $("d-extras").textContent=plus(ex);
-  $("plateTextWrap").hidden=S.plate!=="texto";
+  $("plateTextWrap").hidden=!hasText();
   $("xsub-adaptador").hidden=!S.extras.has("adaptador");
   $("xsub-aro").hidden=!S.extras.has("aro");
   CAT.plateColors.forEach(id=>{const i=$("plateInk-"+id); i.disabled=id===S.plateColor; i.checked=id===plateInkId();});
@@ -758,7 +852,9 @@ $("opts").addEventListener("change",e=>{
   const el=e.target;
   if(el.name==="extras"){el.checked?S.extras.add(el.value):S.extras.delete(el.value);}
   else if(el.name==="plateInk"){S.plateInk=el.value; S.plateInkAuto=false;}
-  else if(el.type==="radio"){S[el.name]=el.value;}
+  else if(el.name==="moduleColor"){S.moduleColor=el.value; S.moduleAuto=el.value===S.baseColor;}
+  else if(el.type==="radio"){S[el.name]=el.value;
+    if(el.name==="model"){ rebuildModel(); syncInputs(); if(window.mat3d&&window.mat3d.focus) window.mat3d.focus("mano"); } }
   else if(el.id==="termoT"){S.termoT=el.value;}
   else if(el.id==="aroD"){S.aroD=+el.value;}
   render();
@@ -779,10 +875,10 @@ $("copy").addEventListener("click",()=>{
 });
 
 // ---------- Celular: el configurador va paso a paso ----------
-const STEPS=[{n:"Base",cam:"mano"},{n:"Manija",cam:"manija"},{n:"Placa",cam:"placa"},{n:"Extras",cam:"mano"},{n:"Confirmar",cam:"mano"}];
+const STEPS=[{n:"Modelo",cam:"mano"},{n:"Base",cam:"mano"},{n:"Manija",cam:"manija"},{n:"Placa",cam:"placa"},{n:"Extras",cam:"mano"},{n:"Confirmar",cam:"mano"}];
 const mobile=matchMedia("(max-width:900px)");
 let step=1, seen=1;
-{ const where={"g-baseColor":1,"g-stripes":1,"g-handleType":2,"g-pattern":2,"g-handleColor":2,"g-plate":3,"g-extras":4};
+{ const where={"g-model":1,"g-pFinish":1,"g-pEnd":1,"g-baseColor":2,"g-stripes":2,"g-handleType":3,"g-pattern":3,"g-handleColor":3,"g-plate":4,"g-extras":5};
   $("opts").querySelectorAll("fieldset").forEach(f=>{for(const k in where) if(f.querySelector("#"+k)) f.dataset.step=where[k];});
   const nav=document.createElement("nav"); nav.className="stepper"; nav.id="stepper"; nav.setAttribute("aria-label","Pasos del pedido");
   nav.innerHTML=STEPS.map((s,i)=>`<button type="button" data-goto="${i+1}"><span class="n">${i+1}</span>${s.n}</button>`).join("");
@@ -833,10 +929,15 @@ $("useT").addEventListener("click",e=>{
 
 // recuperar la última configuración de este navegador
 try{const saved=JSON.parse(localStorage.getItem("matera-config")||"null");
-  if(saved){Object.assign(S,saved,{extras:new Set((saved.extras||[]).filter(id=>CAT.extras.some(o=>o.id===id))),termoT:CAT.termoSizes.some(t=>t.id===saved.termoT)?saved.termoT:"B",aroD:saved.aroD||70}); if(!CAT.plate.some(o=>o.id===S.plate)) S.plate=S.plate==="none"?"marca":"texto";
+  if(saved){Object.assign(S,saved,{extras:new Set((saved.extras||[]).filter(id=>CAT.extras.some(o=>o.id===id))),termoT:CAT.termoSizes.some(t=>t.id===saved.termoT)?saved.termoT:"B",aroD:saved.aroD||70});
+    if(!CAT.models.some(o=>o.id===S.model)) S.model="basica";
+    if(!CAT.premium.finish.some(o=>o.id===S.pFinish)) S.pFinish="lisa";
+    if(!CAT.premium.end.some(o=>o.id===S.pEnd)) S.pEnd="porta";
+    if(S.plate==="none") S.plate="marca";
+    rebuildModel();
     const OLD={grafito:"negro",hormigon:"plata",arena:"blanco",yerba:"plata",chocolate:"plata",hueso:"blanco",cobre:"bronce",oro:"bronce"};
     const fix=(v,list,def)=>{v=OLD[v]||v; return list.includes(v)?v:def;};
-    S.baseColor=fix(S.baseColor,CAT.baseColors,"negro"); S.handleColor=fix(S.handleColor,CAT.handleColors,"bronce"); S.plateColor=fix(S.plateColor,CAT.plateColors,"blanco");
+    S.baseColor=fix(S.baseColor,CAT.baseColors,"negro"); S.moduleColor=fix(S.moduleColor,CAT.baseColors,S.baseColor); if(S.moduleAuto===undefined) S.moduleAuto=true; S.handleColor=fix(S.handleColor,CAT.handleColors,"bronce"); S.plateColor=fix(S.plateColor,CAT.plateColors,"blanco");
     if(!CAT.plateColors.includes(S.plateInk)){S.plateInk="negro"; S.plateInkAuto=true;}
     if(!CAT.stripes.some(o=>o.id===S.stripes)) S.stripes={nacional:"tricolor",penarol:"amarillonegro",aurinegra:"amarillonegro"}[S.stripes]||"none";
     syncInputs();}}catch(e){}
@@ -914,6 +1015,8 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
   /* El modelo usa z hacia arriba y el frente en +y; esta matriz lo pasa al visor (Y arriba). */
   const root=new THREE.Group(); root.matrixAutoUpdate=false;
   root.matrix.set(-1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,1); root.updateMatrixWorld(true); scene.add(root);
+  const basicG=new THREE.Group(); root.add(basicG);                     // línea básica
+  const premG=new THREE.Group(); premG.visible=false; root.add(premG);  // línea premium
 
   /* Medidas del modelo */
   const XS=9.5;                         // centro del tabique y del encastre trasero
@@ -1001,7 +1104,7 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
   }
 
   /* --- Franjas: anillos de 2,6 mm a partir de 4 mm, siguiendo el contorno real de la base --- */
-  const stripes=new THREE.Group(); root.add(stripes);
+  const stripes=new THREE.Group(); basicG.add(stripes);
   const stripeMats=[0,1,2].map(i=>{
     const m=new THREE.MeshStandardMaterial({roughness:.55});
     const sh=new THREE.Shape(offsetPoly(OUTLINE,.45)); sh.holes.push(new THREE.Path(offsetPoly(OUTLINE,-.8)));
@@ -1009,7 +1112,7 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     const mesh=new THREE.Mesh(g,m); mesh.receiveShadow=true; stripes.add(mesh); return m;});
 
   /* --- Manijas: la clásica viene del modelo; las demás usan el mismo pie con otro marco --- */
-  const handleG=new THREE.Group(); root.add(handleG);
+  const handleG=new THREE.Group(); basicG.add(handleG);
   let realHandle=null, plug=null, handleMesh=null, gripMesh=null, curType=null;
   function frameShape(t){   // marco en mm, con el pie desde y=0 (el macho queda abajo)
     let s,h;
@@ -1120,7 +1223,7 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     const bomb=add(props,new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,170,16),new THREE.MeshStandardMaterial({color:lin("#C9CCCF"),metalness:.9,roughness:.25})));
     bomb.position.set(MATE[0]-14,135,-MATE[1]-6); bomb.rotation.z=.22;
   }
-  document.getElementById("props").addEventListener("change",e=>{props.visible=e.target.checked; camTo(props.visible?views.props:(mode==="auto"?views.auto:views.mano));});
+  document.getElementById("props").addEventListener("change",e=>{props.visible=e.target.checked; if(window.mat3d) window.mat3d.update(); camTo(props.visible?views.props:(mode==="auto"?views.auto:views.mano));});
 
   /* --- Extras: aro para mate, adaptador de termo y patitas --- */
   const extraMat=new THREE.MeshStandardMaterial({roughness:.55});
@@ -1147,12 +1250,106 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
   Object.assign(views,{aro:{p:new THREE.Vector3(-230,330,300),t:new THREE.Vector3(-62,45,27)},adaptador:{p:new THREE.Vector3(170,380,300),t:new THREE.Vector3(53,70,27)},patitas:{p:new THREE.Vector3(-360,14,300),t:new THREE.Vector3(0,14,30)}});
   function setLift(h){ if(h===lifted) return; lifted=h;
     root.matrix.set(-1,0,0,0, 0,0,1,h, 0,1,0,0, 0,0,0,1); root.updateMatrixWorld(true);
-    plate.position.y=RECESS_Z+h; }
+    plate.position.y=RECESS_Z+h; pPlate.position.y=P_PANEL_Z+h; }
+
+  /* --- Línea premium: piezas de vidriera; se cargan recién cuando se elige el modelo --- */
+  const P_TERMO=[-52.75,0], P_MATE=[62.75,0], P_LIFT=8, P_PANEL_Z=32;   // los vasos tienen el piso a 11 mm (la básica a 3)
+  // franjas de la premium: cambios de color en la cintura (56 a 63,8 mm), en la base y en el módulo
+  function bandMat(){
+    const m=new THREE.MeshStandardMaterial({roughness:.58});
+    const u={uOn:{value:0},uB0:{value:new THREE.Color()},uB1:{value:new THREE.Color()},uB2:{value:new THREE.Color()}};
+    m.userData.u=u;
+    m.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,u);
+      sh.vertexShader="varying float vZ;\n"+sh.vertexShader.replace("#include <begin_vertex>","#include <begin_vertex>\nvZ=position.z;");
+      sh.fragmentShader="varying float vZ;\nuniform float uOn;\nuniform vec3 uB0;\nuniform vec3 uB1;\nuniform vec3 uB2;\n"+sh.fragmentShader.replace("#include <color_fragment>",
+        "#include <color_fragment>\nif(uOn>.5){ if(vZ>=56.&&vZ<58.6) diffuseColor.rgb=uB0; else if(vZ>=58.6&&vZ<61.2) diffuseColor.rgb=uB1; else if(vZ>=61.2&&vZ<63.8) diffuseColor.rgb=uB2; }"); };
+    return m;
+  }
+  const pBaseMat=bandMat(), pModMat=bandMat();
+  const pHandleMat=new THREE.MeshStandardMaterial({roughness:.5}), pTongueMat=new THREE.MeshStandardMaterial({roughness:.58});
+  const pBase=add(premG,new THREE.Mesh(new THREE.BufferGeometry(),pBaseMat));
+  const pMod=add(premG,new THREE.Mesh(new THREE.BufferGeometry(),pModMat));
+  const pHandleG=new THREE.Group(); pHandleG.matrixAutoUpdate=false; premG.add(pHandleG);
+  const pHandle=add(pHandleG,new THREE.Mesh(new THREE.BufferGeometry(),pHandleMat));
+  const pTongue=add(premG,new THREE.Mesh(new THREE.BufferGeometry(),pTongueMat));
+  const pPhone=add(premG,new THREE.Mesh(new THREE.BoxGeometry(9,75,160),new THREE.MeshStandardMaterial({color:lin("#22262B"),roughness:.3,metalness:.3})));
+  pPhone.position.set(121,0,90); pPhone.visible=false;
+  const pFeetG=new THREE.Group(); premG.add(pFeetG);
+  [[-83,-30],[-83,30],[-33,-42],[-33,42],[47,-42],[47,42],[87,-28],[87,28]].forEach(([x,y])=>{const f=new THREE.Mesh(new THREE.CylinderGeometry(8,8,3,32),rubber); f.rotation.x=Math.PI/2; f.position.set(x,y,1-1.5); f.castShadow=true; pFeetG.add(f);});
+  // placa grande de 108 x 34 en el panel del frente (en coordenadas del visor, como la chica)
+  const pPlateCanvas=document.createElement("canvas"); pPlateCanvas.width=1080; pPlateCanvas.height=340;
+  const pPlateTex=new THREE.CanvasTexture(pPlateCanvas); pPlateTex.encoding=THREE.sRGBEncoding; pPlateTex.anisotropy=4;
+  const pPlateFront=new THREE.MeshStandardMaterial({roughness:.5,map:pPlateTex}), pPlateSide=new THREE.MeshStandardMaterial({roughness:.5});
+  const pPlate=add(scene,new THREE.Mesh(new THREE.BoxGeometry(108,34,1.8),[pPlateSide,pPlateSide,pPlateSide,pPlateSide,pPlateFront,pPlateSide]));
+  pPlate.position.set(1,P_PANEL_Z,55.8+.9); pPlate.visible=false;
+  function paintPlateP(){
+    const ctx=pPlateCanvas.getContext("2d"), hex=CAT.colors[S.plateColor].hex, ink=plateInkHex(), W=1080, H=340, PX=10;
+    ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle=hex; ctx.fillRect(0,0,W,H);
+    const metal=S.plate==="metal";
+    const txt=hasText()?((S.plateText||"").trim().toUpperCase()||"TU NOMBRE"):"MiMatera3D";
+    ctx.shadowColor=isLight(hex)?"rgba(0,0,0,.35)":"rgba(0,0,0,.6)"; ctx.shadowOffsetY=5; ctx.shadowBlur=5;
+    if(metal){   // marco y 4 remaches en relieve
+      ctx.strokeStyle=ink; ctx.lineWidth=12; const m=22; ctx.beginPath(); ctx.roundRect?ctx.roundRect(m,m,W-2*m,H-2*m,20):ctx.rect(m,m,W-2*m,H-2*m); ctx.stroke();
+      ctx.fillStyle=ink; [[78,78],[W-78,78],[78,H-78],[W-78,H-78]].forEach(([x,y])=>{ctx.beginPath(); ctx.arc(x,y,14,0,Math.PI*2); ctx.fill();});
+    }
+    ctx.fillStyle=ink; ctx.textAlign="center"; ctx.textBaseline="middle";
+    const MAXW=(metal?84:98)*PX, CAPH=.7; let size=Math.round((metal?17:20)*PX/CAPH); const minSize=Math.round((metal?11:9)*PX/CAPH);
+    const setF=()=>ctx.font=`700 ${size}px Montserrat, Arial, sans-serif`;
+    setF(); while(ctx.measureText(txt).width>MAXW&&size>minSize){size-=4; setF();}
+    const w=ctx.measureText(txt).width;
+    ctx.save(); ctx.translate(W/2,H/2+6);
+    if(metal) ctx.transform(1,0,-Math.tan(10*Math.PI/180),1,0,0);   // letras inclinadas 10 grados
+    ctx.scale(Math.min(1,MAXW/w),1); ctx.fillText(txt,0,0); ctx.restore();
+    if(metal){ ctx.shadowColor="transparent"; ctx.fillStyle=hex; ctx.save(); ctx.translate(W/2,H/2+6+size*CAPH*.14); ctx.rotate(-.012); ctx.fillRect(-MAXW/2-20,-4,MAXW+40,9); ctx.restore(); }
+    pPlateTex.needsUpdate=true;
+    pPlateSide.color.copy(lin(hex)); pPlateFront.color.set(0xffffff); finish(pPlateFront,S.plateColor); finish(pPlateSide,S.plateColor);
+  }
+  // manija: (x, y, z) del STL de impresión -> (z + 4, x, y + alto); alto abierta / cerrada según la forma
+  const P_HZ={clasica:[132.5,87.5],ergo:[136,88]};
+  let pOpen=1, pExt=0, pReady=false, pWant="";
+  function placeP(){
+    const z=P_HZ[S.handleType==="ergo"?"ergo":"clasica"], zo=z[1]+(z[0]-z[1])*pOpen;
+    pHandleG.matrix.set(0,0,1,4, 1,0,0,0, 0,1,0,zo, 0,0,0,1); pHandleG.matrixWorldNeedsUpdate=true;
+    pTongue.position.set(9.75,-59.8-pExt,2.25);
+  }
+  const pCache={};
+  const pGeo=n=>pCache[n]||(pCache[n]=get("piezas/p/"+n+".txt").then(fromBin).catch(e=>{delete pCache[n]; throw e;}));
+  function premSync(){
+    const b=S.pFinish==="acanalada"?"pbase_acan":"pbase_lisa", m=S.pEnd==="tapa"?"tapa":"porta",
+      h="pman_"+(S.handleType==="ergo"?"ergo":"clasica")+"_"+(S.pattern==="hex"?"panal":S.pattern);
+    const key=[b,m,h].join("|"); if(key===pWant) return; pWant=key;
+    if(!pReady) cap.textContent="Cargando el modelo…";
+    Promise.all([b,m,h,"plengueta"].map(pGeo)).then(([gb,gm,gh,gt])=>{
+      if(pWant!==key) return;
+      pBase.geometry=gb; pMod.geometry=gm; pHandle.geometry=gh; pTongue.geometry=gt;
+      if(!pReady){ pReady=true; cap.textContent=capText; }
+      premG.visible=S.model==="premium"; placeP();
+    }).catch(()=>{ pWant=""; cap.textContent="No se pudo cargar el modelo. Probá de nuevo."; });
+  }
+  const viewsP={placa:{p:new THREE.Vector3(-170,190,640),t:new THREE.Vector3(1,55,30)},manija:{p:new THREE.Vector3(-430,470,430),t:new THREE.Vector3(-14,140,0)},
+    aro:{p:new THREE.Vector3(-230,340,280),t:new THREE.Vector3(-62,55,0)},adaptador:{p:new THREE.Vector3(170,390,280),t:new THREE.Vector3(53,75,0)}};
+  const V=k=>(S.model==="premium"&&viewsP[k])||views[k];
 
   /* --- Actualizar desde el configurador --- */
-  let ready=false;
+  let ready=false, curModel="basica";
   function update(r){
     if(!ready) return;
+    const PM=S.model==="premium";
+    basicG.visible=!PM; plate.visible=!PM; pPlate.visible=PM;
+    if(PM){
+      premSync(); premG.visible=pReady&&pWant!=="";
+      [pBaseMat,pTongueMat].forEach(m=>{m.color.copy(lin(CAT.colors[S.baseColor].hex)); finish(m,S.baseColor);});
+      const mc=modColorId(); pModMat.color.copy(lin(CAT.colors[mc].hex)); finish(pModMat,mc);
+      pHandleMat.color.copy(lin(CAT.colors[S.handleColor].hex)); finish(pHandleMat,S.handleColor);
+      const bc=(r||compute()).st.cols;
+      [pBaseMat,pModMat].forEach(m=>{const u=m.userData.u; u.uOn.value=bc.length?1:0; bc.forEach((c,i)=>u["uB"+i].value.copy(lin(c)));});
+      paintPlateP(); placeP();
+    } else premG.visible=false;
+    pPhone.visible=PM&&props.visible&&S.pEnd==="porta";
+    props.position.set(0,PM?-27:0,PM?P_LIFT:0);
+    aroG.position.set(PM?P_MATE[0]:MATE[0],PM?P_MATE[1]:MATE[1],PM?P_LIFT:0);
+    adaptG.position.set(PM?P_TERMO[0]:TERMO[0],PM?P_TERMO[1]:TERMO[1],PM?P_LIFT:0);
+    if(curModel!==S.model){ curModel=S.model; prevEx=null; }
     baseMat.color.copy(lin(CAT.colors[S.baseColor].hex)); finish(baseMat,S.baseColor);
     if(curType!==S.handleType) buildHandle(S.handleType);
     if(curPat!==S.pattern||curHC!==S.handleColor) paintHandle(S.pattern,S.handleColor);
@@ -1163,10 +1360,10 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     extraMat.color.copy(lin(CAT.colors[S.handleColor].hex)); finish(extraMat,S.handleColor);
     aroG.visible=S.extras.has("aro"); if(aroG.visible&&aroBuilt!==S.aroD) buildAro(S.aroD);
     adaptG.visible=S.extras.has("adaptador"); if(adaptG.visible&&adaptBuilt!==S.termoT) buildAdapt(S.termoT);
-    feetG.visible=S.extras.has("patitas"); setLift(feetG.visible?FEET_UP:0);
+    const feet=S.extras.has("patitas"); feetG.visible=feet&&!PM; pFeetG.visible=feet; setLift(feet?FEET_UP:0);
     // al agregar un extra, la cámara va a mostrarlo
     const now={aro:aroG.visible,adaptador:adaptG.visible,patitas:feetG.visible};
-    if(prevEx){ const k=["patitas","adaptador","aro"].find(k=>now[k]&&!prevEx[k]); if(k) camTo(views[k]); }
+    if(prevEx){ const k=["patitas","adaptador","aro"].find(k=>now[k]&&!prevEx[k]); if(k) camTo(V(k)); }
     prevEx=now;
     // el termo y el mate de referencia se achican a la medida elegida
     const ts=adaptG.visible?(({A:91,B:94,C:96.5}[S.termoT]||94)/102):1, ms=aroG.visible?((S.aroD-3)/82):1;
@@ -1175,13 +1372,13 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     cols.forEach((c,i)=>stripeMats[i].color.copy(lin(c)));
   }
   Object.assign(views,{manija:{p:new THREE.Vector3(-430,440,470),t:new THREE.Vector3(-10,125,20)},placa:{p:new THREE.Vector3(-130,150,500),t:new THREE.Vector3(0,45,60)}});
-  window.mat3d={update, focus:k=>{ if(mode!=="mano") setMode("mano"); if(views[k]) camTo(views[k]); }};
+  window.mat3d={update, focus:k=>{ if(mode!=="mano") setMode("mano"); if(V(k)) camTo(V(k)); }};
 
   /* --- Carga de las piezas --- */
   const get=u=>fetch(u).then(r=>{if(!r.ok) throw new Error(u); return r.text();});
   Promise.all(["piezas/base.txt","piezas/cartucho.txt","piezas/manija.txt","piezas/macho.txt"].map(get)).then(([b,c,h,m])=>{
-    add(root,new THREE.Mesh(fromBin(b),baseMat));
-    add(root,new THREE.Mesh(fromBin(c),baseMat));
+    add(basicG,new THREE.Mesh(fromBin(b),baseMat));
+    add(basicG,new THREE.Mesh(fromBin(c),baseMat));
     realHandle=planarUV(fromBin(h));
     plug=new THREE.Mesh(planarUV(fromBin(m)),handleMat); plug.castShadow=plug.receiveShadow=true;
     ready=true; cap.textContent=capText; update();
@@ -1207,6 +1404,8 @@ const OUTLINE=[[35.2,-29.84],[39.43,-28.5],[84.5,-28.5],[86.32,-28.42],[88.02,-2
     if(camAnim){const t=Math.min(1,(now-camAnim.t0)/900), e=ease(t);
       cam.position.lerpVectors(camAnim.p0,camAnim.v.p,e); ctl.target.lerpVectors(camAnim.t0v,camAnim.v.t,e);
       if(t>=1) camAnim=null;}
+    if(premG.visible){ const to=mode==="auto"?0:1, te=mode==="auto"?60:0;
+      if(Math.abs(pOpen-to)>.001||Math.abs(pExt-te)>.05){ const k=reduce?1:.12; pOpen+=(to-pOpen)*k; pExt+=(te-pExt)*k; placeP(); } }
     ctl.update(); if(ready) syncClip(); renderer.render(scene,cam);
   })(performance.now());
 })();
